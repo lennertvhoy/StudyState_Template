@@ -364,7 +364,7 @@ def build_evidence_index() -> dict:
     return {
         "index_version": "1.0",
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source": str(EVIDENCE_LOG_PATH.relative_to(ROOT)),
+        "source": EVIDENCE_LOG_PATH.relative_to(ROOT).as_posix(),
         "count": len(items),
         "items": [
             {
@@ -446,18 +446,18 @@ def compact(force: bool = False, dry_run: bool = False) -> tuple[bool, dict]:
         context = build_current_context(study_state, skill_map, review_state, next_actions_text, now)
         CURRENT_CONTEXT_PATH.parent.mkdir(parents=True, exist_ok=True)
         CURRENT_CONTEXT_PATH.write_text(context + "\n", encoding="utf-8")
-        print(f"Updated {CURRENT_CONTEXT_PATH.relative_to(ROOT)}")
+        print(f"Updated {CURRENT_CONTEXT_PATH.relative_to(ROOT).as_posix()}")
 
     if rebuild_evidence:
         evidence_index = build_evidence_index()
         save_yaml(EVIDENCE_INDEX_PATH, evidence_index)
-        print(f"Updated {EVIDENCE_INDEX_PATH.relative_to(ROOT)} ({evidence_index['count']} evidence items)")
+        print(f"Updated {EVIDENCE_INDEX_PATH.relative_to(ROOT).as_posix()} ({evidence_index['count']} evidence items)")
 
     if rebuild_sessions:
         session_summaries = build_session_summaries()
         SESSION_SUMMARIES_PATH.parent.mkdir(parents=True, exist_ok=True)
         SESSION_SUMMARIES_PATH.write_text(session_summaries, encoding="utf-8")
-        print(f"Updated {SESSION_SUMMARIES_PATH.relative_to(ROOT)}")
+        print(f"Updated {SESSION_SUMMARIES_PATH.relative_to(ROOT).as_posix()}")
 
     if not (rebuild_context or rebuild_evidence or rebuild_sessions):
         print("No state changes detected. Derived summaries are up to date.")

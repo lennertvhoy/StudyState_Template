@@ -27,7 +27,7 @@ def test_the_real_template_passes_its_own_check() -> None:
 def test_an_unclassified_file_is_reported_and_blocks_instance_creation() -> None:
     with testkit.tempdir("studystate-release-") as tmp:
         copy = testkit.copy_template(Path(tmp))
-        (copy / "stray-notes.txt").write_text("scratch", encoding="utf-8")
+        (copy / "stray-notes.txt").write_text("scratch", encoding="utf-8", newline="\n")
         result = release(copy, "check")
         assert result.returncode == 1 and "stray-notes.txt" in result.stdout
 
@@ -43,7 +43,7 @@ def test_block_drift_is_caught_and_sync_repairs_it() -> None:
     with testkit.tempdir("studystate-release-") as tmp:
         copy = testkit.copy_template(Path(tmp))
         core = copy / own.CORE_BLOCK_PATH
-        core.write_text(core.read_text(encoding="utf-8") + "\nA new rule.\n", encoding="utf-8")
+        core.write_text(core.read_text(encoding="utf-8") + "\nA new rule.\n", encoding="utf-8", newline="\n")
         result = release(copy, "check")
         assert result.returncode == 1 and "differs from core/AGENTS.studystate.md" in result.stdout
 
@@ -60,7 +60,7 @@ def test_sync_changes_only_the_block() -> None:
         before = (copy / own.AGENTS_PATH).read_text(encoding="utf-8")
         block = own.find_block(before)
         core = copy / own.CORE_BLOCK_PATH
-        core.write_text(core.read_text(encoding="utf-8") + "\nAnother rule.\n", encoding="utf-8")
+        core.write_text(core.read_text(encoding="utf-8") + "\nAnother rule.\n", encoding="utf-8", newline="\n")
         release(copy, "sync")
         after = (copy / own.AGENTS_PATH).read_text(encoding="utf-8")
         assert after[: block.start] == before[: block.start], "the ProjectState block and frontmatter are untouched"
@@ -71,7 +71,7 @@ def test_version_without_changelog_or_marker_is_caught() -> None:
     with testkit.tempdir("studystate-release-") as tmp:
         copy = testkit.copy_template(Path(tmp))
         version = copy / own.VERSION_PATH
-        version.write_text(re.sub(r'^template_version: ".*"$', 'template_version: "9.9.9"', version.read_text(encoding="utf-8"), flags=re.M), encoding="utf-8")
+        version.write_text(re.sub(r'^template_version: ".*"$', 'template_version: "9.9.9"', version.read_text(encoding="utf-8"), flags=re.M), encoding="utf-8", newline="\n")
         result = release(copy, "check")
         assert result.returncode == 1
         assert "release 0." in result.stdout and "template_version is 9.9.9" in result.stdout

@@ -43,7 +43,7 @@ class World:
         self.instance = testkit.make_learner_instance(self.tmp, template=self.template)
         agents = self.instance / "AGENTS.md"
         text = agents.read_text(encoding="utf-8")
-        agents.write_text(text.replace("## Local rules\n", "## Local rules\n\n" + LOCAL_RULE, 1), encoding="utf-8")
+        agents.write_text(text.replace("## Local rules\n", "## Local rules\n\n" + LOCAL_RULE, 1), encoding="utf-8", newline="\n")
         testkit.commit_all(self.instance, "instance baseline")
 
     def update(self, *args: str):
@@ -51,14 +51,14 @@ class World:
 
     def change_template(self) -> None:
         """A realistic release: new, changed, removed managed files, a new block, a new version."""
-        (self.template / "protocols" / "NEW_PROTOCOL.md").write_text("# New\n", encoding="utf-8")
+        (self.template / "protocols" / "NEW_PROTOCOL.md").write_text("# New\n", encoding="utf-8", newline="\n")
         ask = self.template / "protocols" / "ASK_QUESTION.md"
-        ask.write_text(ask.read_text(encoding="utf-8") + "\nA new rule.\n", encoding="utf-8")
+        ask.write_text(ask.read_text(encoding="utf-8") + "\nA new rule.\n", encoding="utf-8", newline="\n")
         (self.template / "docs" / "future-model-efficiency.md").unlink()
         core = self.template / own.CORE_BLOCK_PATH
-        core.write_text(core.read_text(encoding="utf-8") + "\n## New section\n\nNew contract text.\n", encoding="utf-8")
+        core.write_text(core.read_text(encoding="utf-8") + "\n## New section\n\nNew contract text.\n", encoding="utf-8", newline="\n")
         version = self.template / own.VERSION_PATH
-        version.write_text(version.read_text(encoding="utf-8").replace('template_version: "0.12.0"', 'template_version: "0.12.1"'), encoding="utf-8")
+        version.write_text(version.read_text(encoding="utf-8").replace('template_version: "0.12.0"', 'template_version: "0.12.1"'), encoding="utf-8", newline="\n")
         testkit.script("template_release.py", "sync", cwd=self.template)
         testkit.commit_all(self.template, "release 0.12.1")
 
@@ -152,8 +152,8 @@ def test_two_releases_append_two_history_entries() -> None:
         testkit.commit_all(world.instance, "apply 0.12.1")
 
         version = world.template / own.VERSION_PATH
-        version.write_text(version.read_text(encoding="utf-8").replace('"0.12.1"', '"0.12.2"', 1), encoding="utf-8")
-        (world.template / "protocols" / "NEW_PROTOCOL.md").write_text("# New again\n", encoding="utf-8")
+        version.write_text(version.read_text(encoding="utf-8").replace('"0.12.1"', '"0.12.2"', 1), encoding="utf-8", newline="\n")
+        (world.template / "protocols" / "NEW_PROTOCOL.md").write_text("# New again\n", encoding="utf-8", newline="\n")
         testkit.script("template_release.py", "sync", cwd=world.template)
         testkit.commit_all(world.template, "release 0.12.2")
         assert world.update("--apply").returncode == 0
@@ -167,7 +167,7 @@ def test_a_file_edited_in_the_instance_blocks_the_update() -> None:
     with testkit.tempdir("studystate-update-") as tmp:
         world = World(tmp)
         ask = world.instance / "protocols" / "ASK_QUESTION.md"
-        ask.write_text(ask.read_text(encoding="utf-8") + "\nMy own rule.\n", encoding="utf-8")
+        ask.write_text(ask.read_text(encoding="utf-8") + "\nMy own rule.\n", encoding="utf-8", newline="\n")
         testkit.commit_all(world.instance, "local edit")
         world.change_template()
 
@@ -190,7 +190,7 @@ def test_an_edited_contract_block_blocks_the_update() -> None:
         world = World(tmp)
         agents = world.instance / "AGENTS.md"
         text = agents.read_text(encoding="utf-8")
-        agents.write_text(text.replace("## Mode check", "## Mode check\n\nMy tweak.", 1), encoding="utf-8")
+        agents.write_text(text.replace("## Mode check", "## Mode check\n\nMy tweak.", 1), encoding="utf-8", newline="\n")
         testkit.commit_all(world.instance, "tweak the contract")
         world.change_template()
 
@@ -205,7 +205,7 @@ def test_uncommitted_changes_in_written_files_block_the_update() -> None:
         world = World(tmp)
         world.change_template()
         version = world.instance / own.VERSION_PATH
-        version.write_text(version.read_text(encoding="utf-8") + "\n# unsaved thought\n", encoding="utf-8")
+        version.write_text(version.read_text(encoding="utf-8") + "\n# unsaved thought\n", encoding="utf-8", newline="\n")
 
         refused = world.update()
         assert refused.returncode == 2 and "uncommitted changes" in refused.stderr and own.VERSION_PATH in refused.stderr
@@ -234,7 +234,7 @@ def test_an_instance_without_a_lock_cannot_tell_edits_from_old_text() -> None:
 def test_an_older_instance_without_the_block_is_refused_with_guidance() -> None:
     with testkit.tempdir("studystate-update-") as tmp:
         world = World(tmp)
-        (world.instance / "AGENTS.md").write_text("# AGENTS.md\n\nLegacy rules, no markers.\n", encoding="utf-8")
+        (world.instance / "AGENTS.md").write_text("# AGENTS.md\n\nLegacy rules, no markers.\n", encoding="utf-8", newline="\n")
         testkit.commit_all(world.instance, "legacy agents")
         refused = world.update()
         assert refused.returncode == 2 and "Convert an older instance" in refused.stderr
@@ -290,7 +290,7 @@ def test_a_damaged_lock_cannot_make_the_update_delete_learner_files() -> None:
             lock = own.read_lock(world.instance)
             victim = world.instance / bad_key
             lock["files"][bad_key] = own.digest_file(victim) if victim.is_file() else "0" * 64
-            (world.instance / own.LOCK_PATH).write_text(json.dumps(lock), encoding="utf-8")
+            (world.instance / own.LOCK_PATH).write_text(json.dumps(lock), encoding="utf-8", newline="\n")
             testkit.commit_all(world.instance, "tampered lock")
             before = world.digests(LEARNER_FILES)
             refused = world.update("--apply")
@@ -314,7 +314,7 @@ def test_crlf_agents_md_is_preserved_and_mixed_endings_are_refused() -> None:
     with testkit.tempdir("studystate-update-") as tmp:
         world = World(tmp)
         agents = world.instance / "AGENTS.md"
-        agents.write_bytes(agents.read_bytes().replace(b"\n", b"\r\n"))
+        agents.write_bytes(agents.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         testkit.commit_all(world.instance, "crlf checkout")
         world.change_template()
         applied = world.update("--apply")
@@ -326,7 +326,7 @@ def test_crlf_agents_md_is_preserved_and_mixed_endings_are_refused() -> None:
     with testkit.tempdir("studystate-update-") as tmp:
         world = World(tmp)
         agents = world.instance / "AGENTS.md"
-        agents.write_bytes(agents.read_bytes().replace(b"\n", b"\r\n", 3))
+        agents.write_bytes(agents.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n", 3))
         testkit.commit_all(world.instance, "mixed endings")
         world.change_template()
         refused = world.update()

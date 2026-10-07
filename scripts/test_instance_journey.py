@@ -122,7 +122,7 @@ def main() -> int:
 
         step("4. Release a change in the template and update the instance")
         agents = inst / "AGENTS.md"
-        agents.write_text(agents.read_text(encoding="utf-8").replace("## Local rules\n", "## Local rules\n\n" + LOCAL_RULE, 1), encoding="utf-8")
+        agents.write_text(agents.read_text(encoding="utf-8").replace("## Local rules\n", "## Local rules\n\n" + LOCAL_RULE, 1), encoding="utf-8", newline="\n")
         testkit.commit_all(inst, "learner baseline")
         learner_files = [
             "state/STUDY_STATE.yaml", "state/SKILL_MAP.yaml", "state/EVIDENCE_LOG.md", "reviews/REVIEW_STATE.yaml",
@@ -132,13 +132,13 @@ def main() -> int:
         before = {p: digest(inst / p) for p in learner_files}
 
         template = testkit.copy_template(work, "Template_Next")
-        (template / "protocols" / "JOURNEY_NEW.md").write_text("# A new protocol\n", encoding="utf-8")
+        (template / "protocols" / "JOURNEY_NEW.md").write_text("# A new protocol\n", encoding="utf-8", newline="\n")
         ask = template / "protocols" / "ASK_QUESTION.md"
-        ask.write_text(ask.read_text(encoding="utf-8") + "\nA refined rule.\n", encoding="utf-8")
+        ask.write_text(ask.read_text(encoding="utf-8") + "\nA refined rule.\n", encoding="utf-8", newline="\n")
         core = template / own.CORE_BLOCK_PATH
-        core.write_text(core.read_text(encoding="utf-8") + "\n## Journey section\n\nNew contract text.\n", encoding="utf-8")
+        core.write_text(core.read_text(encoding="utf-8") + "\n## Journey section\n\nNew contract text.\n", encoding="utf-8", newline="\n")
         version = template / own.VERSION_PATH
-        version.write_text(version.read_text(encoding="utf-8").replace('template_version: "0.12.0"', 'template_version: "0.12.1"'), encoding="utf-8")
+        version.write_text(version.read_text(encoding="utf-8").replace('template_version: "0.12.0"', 'template_version: "0.12.1"'), encoding="utf-8", newline="\n")
         testkit.script("template_release.py", "sync", cwd=template)
         testkit.commit_all(template, "release 0.12.1")
 
