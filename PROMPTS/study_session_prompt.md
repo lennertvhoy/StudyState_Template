@@ -10,7 +10,7 @@ Run a focused StudyState study session.
 
 ## Setup
 
-1. Read all files listed in `AGENTS.md` "Required First Actions".
+1. Follow `AGENTS.md` "Session start": read the context pack, not the repo. Load no other file until the task needs it (`protocols/README.md` indexes the protocols).
 2. Choose session mode: deep, normal, low-energy, or recovery.
 3. Identify the active target, active focus, weakest skill, pending topic, or due review.
 4. Select the next best question using `protocols/SELECT_NEXT_ACTION.md`.

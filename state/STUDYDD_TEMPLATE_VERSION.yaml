@@ -17,7 +17,7 @@
 # Do not edit template_version manually in a learner instance. Use the upgrade
 # protocol in protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md.
 
-template_version: "0.11.0"
+template_version: "0.12.0"
 template_commit: ""
 naming:
   public_name: StudyState

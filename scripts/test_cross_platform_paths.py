@@ -24,7 +24,6 @@ VALIDATION_SCRIPTS = [
 
 # Patterns that are obvious portability mistakes in setup docs and scripts.
 FORBIDDEN_PATH_PATTERNS = [
-    "/home/ff",
     "/home/",
     "/Users/",
     "C:\\\\",
@@ -52,26 +51,37 @@ def test_setup_docs_have_no_hardcoded_paths() -> None:
         assert pattern not in text, f"docs/setup.md contains hardcoded path: {pattern!r}"
 
 
-def test_user_facing_docs_have_no_hardcoded_paths() -> None:
-    """The no-machine-paths law applies beyond setup.md.
+def _repo_text_files() -> list[Path]:
+    """Every text file the template ships, found without requiring git."""
+    skip_dirs = {".git", ".venv", ".studydd", "__pycache__", ".pytest_cache", ".worktrees", "node_modules"}
+    files: list[Path] = []
+    for path in sorted(ROOT.rglob("*")):
+        if not path.is_file() or any(part in skip_dirs for part in path.relative_to(ROOT).parts):
+            continue
+        try:
+            path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        files.append(path)
+    return files
 
-    Scans every current user-facing Markdown surface. Historical records
-    (Evidence/, docs/superpowers/) are exempt; AGENTS.md is exempt because its
-    rule text quotes example paths when forbidding them.
+
+def test_repo_has_no_hardcoded_machine_paths() -> None:
+    """The no-machine-paths law applies to every file the template ships.
+
+    There are no exemptions: historical records live in Git history, not in the
+    tree, so nothing here may name a home directory. This file is skipped only
+    because it has to spell the forbidden patterns out.
     """
-    doc_paths: list[Path] = [
-        ROOT / "README.md",
-        ROOT / "CONTRIBUTING.md",
-        *sorted((ROOT / "docs").glob("*.md")),
-        *sorted((ROOT / "protocols").glob("*.md")),
-        *sorted((ROOT / "PROMPTS").glob("*.md")),
-    ]
-    assert doc_paths, "expected user-facing docs to exist"
-    for path in doc_paths:
+    files = [p for p in _repo_text_files() if p.name != Path(__file__).name]
+    assert len(files) > 50, "expected the full template tree to be scanned"
+    offenders: list[str] = []
+    for path in files:
         text = path.read_text(encoding="utf-8")
-        rel = path.relative_to(ROOT).as_posix()
         for pattern in FORBIDDEN_PATH_PATTERNS:
-            assert pattern not in text, f"{rel} contains hardcoded path: {pattern!r}"
+            if pattern in text:
+                offenders.append(f"{path.relative_to(ROOT).as_posix()} ({pattern!r})")
+    assert not offenders, "hardcoded machine paths found: " + ", ".join(offenders)
 
 
 def test_setup_helper_has_no_hardcoded_paths() -> None:
@@ -148,7 +158,7 @@ def main() -> int:
     tests = [
         test_setup_docs_cover_all_platforms,
         test_setup_docs_have_no_hardcoded_paths,
-        test_user_facing_docs_have_no_hardcoded_paths,
+        test_repo_has_no_hardcoded_machine_paths,
         test_setup_helper_has_no_hardcoded_paths,
         test_environment_checker_has_no_hardcoded_paths,
         test_repo_scripts_use_pathlib,

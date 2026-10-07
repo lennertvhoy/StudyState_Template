@@ -63,7 +63,7 @@ In low-energy mode, the agent may still pick a due review but should choose a li
 
 ## Machine-readable state
 
-`reviews/REVIEW_STATE.yaml` is the reliable surface. Keep it in sync with `reviews/REVIEW_QUEUE.md`. Use `scripts/schedule_review.py` to add items with timezone-aware `due_at` timestamps.
+`reviews/REVIEW_STATE.yaml` is the reliable surface. Keep it in sync with `reviews/REVIEW_QUEUE.md`. Use `scripts/schedule_review.py` to add items with timezone-aware `due_at` timestamps and to record each completed review (`--review-id`), which expands or resets the interval. Never hand-edit an item's interval or due date.
 
 ## Limitation
 

@@ -10,7 +10,7 @@ Run a StudyState interview rehearsal session.
 
 ## Setup
 
-1. Read all files listed in `AGENTS.md` "Required First Actions".
+1. Follow `AGENTS.md` "Session start": read the context pack, not the repo. Load no other file until the task needs it (`protocols/README.md` indexes the protocols). Build it with `python3 scripts/build_context_pack.py --task start_session` and read `.studydd/context_pack.md`.
 2. Identify the target role, company context, active focus, and weak areas.
 3. Prepare a mix of behavioral and technical questions appropriate to the role.
 4. Use `protocols/QUESTION_QUALITY.md` to design each question.

@@ -30,6 +30,12 @@ REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 
 VALID_RESULTS = {"correct", "partial", "incorrect", "unclear", "insufficient_evidence"}
 
+# Make the canonical source-check writer importable from the same directory.
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+import record_source_check
+
 
 def load_yaml(path: Path) -> dict[str, Any]:
     try:
@@ -219,6 +225,24 @@ def schedule_review_if_needed(skill_id: str, evidence_id: str, result: str) -> N
     subprocess.run(cmd, cwd=ROOT, check=False)
 
 
+def record_source_check_from_activity(activity: dict[str, Any], args: argparse.Namespace) -> int:
+    """Hand off a completed recent_info_check to the source-check writer."""
+    return record_source_check.record_source_check(
+        source_id=args.source_id,
+        target_id=activity.get("target_id"),
+        outcome=args.source_outcome,
+        summary=args.source_summary,
+        evidence_id=args.evidence_id,
+        activity_id=args.activity_id,
+        checked_at=args.source_checked_at,
+        expires_at=args.source_expires_at,
+        authority=args.source_authority,
+        volatility=args.source_volatility,
+        usable_for_questions=args.source_usable_for_questions,
+        repo_root=ROOT,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Record a StudyState activity result")
     parser.add_argument("--activity-id", required=True)
@@ -226,6 +250,29 @@ def main() -> int:
     parser.add_argument("--evidence-id", required=True)
     parser.add_argument("--mistake-tags", default="", help="Comma-separated mistake tags")
     parser.add_argument("--notes", default="", help="Optional notes")
+
+    # Source-check handoff flags. Used automatically when the completed activity
+    # is a recent_info_check and --source-id is provided.
+    parser.add_argument("--source-id", default="", help="Source ID to record for a recent_info_check")
+    parser.add_argument("--source-outcome", default="fresh", help="Source check outcome")
+    parser.add_argument("--source-summary", default="", help="Source check summary")
+    parser.add_argument("--source-authority", default="official", help="Source authority level")
+    parser.add_argument("--source-volatility", default=None, help="Source volatility")
+    parser.add_argument("--source-checked-at", default=now_iso(), help="ISO 8601 timestamp for the source check")
+    parser.add_argument("--source-expires-at", default=None, help="Optional ISO 8601 expiration")
+    parser.add_argument(
+        "--source-usable-for-questions",
+        dest="source_usable_for_questions",
+        action="store_true",
+        default=None,
+        help="Mark source usable for questions",
+    )
+    parser.add_argument(
+        "--source-not-usable-for-questions",
+        dest="source_usable_for_questions",
+        action="store_false",
+        help="Mark source not usable for questions",
+    )
     args = parser.parse_args()
 
     activity = update_activity_state(args.activity_id, args.result, args.evidence_id)
@@ -238,6 +285,16 @@ def main() -> int:
     append_evidence_log(activity, args.result, args.evidence_id, mistake_tags, args.notes)
     update_skill_map(activity.get("skill_id"), args.result)
     schedule_review_if_needed(activity.get("skill_id"), args.evidence_id, args.result)
+
+    # Automatic source-check handoff for completed recent_info_check activities.
+    if activity.get("type") == "recent_info_check" and args.source_id:
+        source_check_code = record_source_check_from_activity(activity, args)
+        if source_check_code != 0:
+            print(
+                f"Warning: source-check recording failed with exit code {source_check_code}; "
+                "activity result was still recorded."
+            )
+            return source_check_code
 
     print(f"Recorded activity result for {args.activity_id}")
     print(f"  result: {args.result}")

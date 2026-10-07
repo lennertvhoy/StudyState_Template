@@ -1,0 +1,43 @@
+name: Validate StudyState instance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check the environment
+        run: python scripts/check_environment.py
+
+      - name: Check study state and repository health
+        run: python scripts/check_studydd.py
+
+      - name: Run the instance's tests
+        run: python scripts/run_tests.py
+
+      - name: Check whitespace
+        run: git diff --check
+
+      # Add `python scripts/projectstate_gate.py` here once PROJECT.md and the first
+      # journey are recorded: until then the gate fails on purpose.

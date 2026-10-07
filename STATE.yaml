@@ -1,0 +1,50 @@
+# Canonical current truth. Keep exactly one active slice; history belongs in Git.
+version: "projectstate-template-v6"
+profile: core
+project:
+  outcome_ref: "PROJECT.md#outcome"
+current_slice:
+  id: template-hardening-001
+  objective: "Make the template a ProjectState v6 repository, close the open loops in its learning core (review completion, source-check completion), cut the start-up reading to the declared budget, make instances mechanically updatable, and make every test clock-independent."
+  status: ready_for_human
+  # Human-owned. Agents may report results but may not weaken these criteria.
+  acceptance:
+    - "An instance cast from this checkout runs the full loop, including recording a review result and a source check, and passes the validator at every step."
+    - "An instance cast earlier is brought to the current template by update_instance.py: dry run first, refusal on local edits, learner state untouched."
+    - "The whole suite passes on the real clock and on a clock 400 days ahead, and the start-up reading stays within the declared budget."
+    - "No machine path appears anywhere in the tree, and the template's own gate passes."
+  primary_journey:
+    description: "Cast an instance from this checkout, run one study loop through a review result and a source check, change the template, and update the instance from it."
+    command: "python3 scripts/test_instance_journey.py"
+    environment: "Linux x86_64 workstation, system Python 3.13.15 with PyYAML 6.0.3 and git 2.55.0; the uncommitted working tree of this checkout, cast into a throwaway directory."
+    status: passed
+    evidence: "evidence/template-hardening-001/summary.md"
+validation:
+  primary_journey: passed
+  automated_tests: passed
+  human_acceptance: pending
+delivery_boundary:
+  name: template_repository_local
+  failed_attempts: []
+  simplification_review: null
+blockers: []
+risks:
+  - id: windows-macos-ci-unverified
+    category: test_health
+    severity: medium
+    exposure: development_only
+    affected_environment: "GitHub Actions windows-latest and macos-latest"
+    consequence: "The whole suite now runs on those systems for the first time (CI used to run two scripts there). Older scripts that were never run on Windows or macOS may fail until fixed. Everything was verified on Linux with Python 3.13 and 3.14 only."
+    owner: "owner"
+    decision: defer
+    expires: "2026-11-07"
+  - id: python-3-10-unrun
+    category: test_health
+    severity: low
+    exposure: development_only
+    affected_environment: "Python 3.10, the minimum the README promises"
+    consequence: "Every script parses under the 3.10 grammar and no 3.11+ API was found, but the minimum-python CI job has not run, so a 3.10-only failure would show up there first."
+    owner: "owner"
+    decision: defer
+    expires: "2026-11-07"
+next_action: "Owner: review the working tree, accept, reject, or waive this slice with projectstate_decide.py, then commit it on a private branch and push so CI runs on Windows and macOS. Then decide the open pull requests and the unmerged lifecycle-manifest branches (see the evidence summary)."

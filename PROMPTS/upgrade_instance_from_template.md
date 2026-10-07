@@ -1,81 +1,46 @@
 # Upgrade A StudyState Learner Instance From The Template
 
-You are applying a generic StudyState_Template upgrade to an existing learner
-instance. Do not touch learner state.
+You are bringing an existing learner instance up to a newer StudyState template. Do not
+touch learner state. Use the tool; do not copy files by hand.
 
 ## Before you start
 
 1. Verify repo path: `pwd`, `git rev-parse --show-toplevel`.
-2. Verify remote and branch: `git remote -v`, `git branch --show-current`.
-3. Read `state/STUDYDD_MODE.yaml` and confirm `mode: learner_instance`.
-4. Read `state/STUDYDD_TEMPLATE_VERSION.yaml`.
-5. Read `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`,
-   `protocols/GIT_PROVENANCE.md`, and `protocols/PRIVACY_REVIEW.md`.
+2. Verify remote and branch: `git remote -v`, `git branch --show-current`. Put the instance on a
+   private branch with a clean worktree.
+3. Read `state/STUDYDD_MODE.yaml` and confirm `mode` is `learner_instance` or `bootstrap`.
+4. Read `state/STUDYDD_TEMPLATE_VERSION.yaml` and `protocols/UPGRADE_INSTANCE_FROM_TEMPLATE.md`.
 
 ## Locate the template source
 
-Ask the learner for the template path or remote. The public template is:
+Ask the learner for the template checkout (the public template is
+`https://github.com/lennertvhoy/StudyState_Template.git`). Read its `CHANGELOG.md` for every
+release since the instance's version and note each one's instance action.
 
-- Remote: `https://github.com/lennertvhoy/StudyState_Template.git`
-- Local path: the directory they originally cloned from
+## Run the update
 
-## Inspect versions
+From the template checkout:
 
-Compare:
+```bash
+python3 scripts/update_instance.py --target /path/to/instance            # dry run
+python3 scripts/update_instance.py --target /path/to/instance --apply
+```
 
-- `state/STUDYDD_TEMPLATE_VERSION.yaml` in the instance
-- `state/STUDYDD_TEMPLATE_VERSION.yaml` in the template source
+Read the dry run before applying. If it refuses, report why and ask the learner; do not add
+`--replace-edited` or `--allow-dirty` on your own. If the instance has no `studystate:managed`
+block in `AGENTS.md`, follow "Convert an older instance" in `docs/UPGRADING.md`.
 
-Only proceed if the template source version is newer or the learner explicitly
-wants a specific upgrade.
+## Validate
 
-## Protect learner state
-
-Do not overwrite:
-
-- `state/STUDY_STATE.yaml`
-- `state/SKILL_MAP.yaml`
-- `state/EVIDENCE_LOG.md`
-- `state/STUDY_BACKLOG.md`
-- `state/STUDY_STATUS.md`
-- `sessions/SESSION_LOG.md`
-- `reviews/REVIEW_QUEUE.md`
-- `sources/SOURCE_INDEX.md`
-- `targets/<learner_target_folders>/`
-- `NEXT_ACTIONS.md`
-
-`state/STUDYDD_TEMPLATE_VERSION.yaml` should be merged, not replaced.
-
-## Copy or merge generic improvements
-
-Upgrade these from the template:
-
-- `AGENTS.md`
-- `README.md`
-- `protocols/`
-- `PROMPTS/`
-- `scripts/`
-- `docs/`
-- `.github/workflows/`
-- `EXAMPLES/` only if the learner confirms
-
-## Validate before and after
-
-Run `python3 scripts/check_studydd.py` before and after the upgrade. Do not
-commit if validation fails.
+In the instance, run `python3 scripts/check_studydd.py` and read `git diff`. Do not commit if
+validation fails.
 
 ## Commit and push
 
-Commit only when instructed:
-
-```bash
-git add <generic files>
-git commit -m "chore: upgrade StudyState generic files from template vX.Y.Z"
-```
-
-Push only when the learner explicitly asks.
+Commit only when instructed, separately from study-session changes. Push only when the
+learner explicitly asks.
 
 ## Report
 
-List copied, merged, skipped, and protected files. Note any validator warnings
-or limitations.
+List what was added, replaced, removed, and kept; any refusals and how they were resolved;
+validation before and after; and what was committed or pushed.

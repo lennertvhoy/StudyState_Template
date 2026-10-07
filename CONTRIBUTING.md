@@ -22,9 +22,10 @@ Thank you for helping improve StudyState.
 1. Fork the repository.
 2. Create a feature branch.
 3. Make focused changes.
-4. Run `python3 scripts/check_studydd.py` and fix any errors.
-5. Commit with a clear message.
-6. Open a pull request.
+4. In the template repository, read `core/MAINTAINING.md`: it holds the rules for changing the template.
+5. Run `python3 scripts/run_tests.py` and `python3 scripts/check_studydd.py`, and fix any errors.
+6. Commit with a clear message.
+7. Open a pull request.
 
 ## Style
 

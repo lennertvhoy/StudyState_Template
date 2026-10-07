@@ -9,15 +9,10 @@
 - **core-build-skill-map:** Build the first conservative skill map from trusted sources in `sources/SOURCE_INDEX.md`.
 - **core-first-diagnostic:** Run one hard diagnostic question and record evidence.
 - **core-review-queue:** Add weak or repaired items to `reviews/REVIEW_QUEUE.md`.
-- **addon-telegram-study-bot:** Future add-on for daily review prompts, answer capture, reminders, and low-energy study mode.
-- **addon-containerized-studystate:** Future add-on for Docker, Podman, devcontainer, or compose-based portable local execution.
-- **core-worktree-safety:** Adopt a generic single-checkout / single learner-state-writer policy (lock file + protocol), inspired by the learner-instance worktree safety work; needs its own tests before entering the template.
-- **core-studystate-machine-id-migration:** Separately versioned migration of legacy `studydd` machine identifiers (paths, script names, schema IDs) to `studystate`, with aliases, upgrade tests, rollback, and coordinated StatePort compat-view updates. See `docs/naming-and-compatibility.md`.
-- **core-template-instance-boundary:** Encode and enforce template-vs-instance boundary checks (manifest boundary fields) as prototyped on the learner instance; keep the public template generic.
 
 ## Done
 
-- 2026-08-26: StudyState public naming adoption and demo-freshness time-bomb fix (template v0.11.0).
+- None yet.
 
 ## Backlog rules
 

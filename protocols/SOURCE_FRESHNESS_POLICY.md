@@ -2,6 +2,10 @@
 
 This policy defines how fresh a source must be for a given study topic, and how agents must handle stale or uncertain information.
 
+> **Canonical numeric windows live in `scripts/check_source_freshness.py`.**
+> Keep this policy aligned with `VOLATILITY_MAX_AGE_DAYS` in that script so the
+> documented defaults never drift from the implemented defaults again.
+
 ## Volatility Classes
 
 ```yaml
@@ -16,11 +20,11 @@ volatility_classes:
     source_required_for_new_questions: false
   moderate:
     examples: [certification objectives, school curriculum standards, cloud architecture best practices, software library behavior]
-    default_max_age_days: 90
+    default_max_age_days: 30
     source_required_for_new_questions: true
   volatile:
     examples: [Microsoft Azure services, cloud security products, vendor certification exam objectives, pricing, preview features, portal UI locations, product names, compliance features]
-    default_max_age_days: 30
+    default_max_age_days: 7
     source_required_for_new_questions: true
   live:
     examples: [current outages, current prices, current exam retirement dates, current product availability, breaking changes]
@@ -48,3 +52,4 @@ Freshness rules depend on source authority. Use the following levels, consistent
 - The learner may override freshness recommendations. Any override must be recorded in `state/EVIDENCE_LOG.md` and `sessions/SESSION_LOG.md`.
 - Reference fixtures under `EXAMPLES/` are historical snapshots: their source timestamps are deterministic test metadata, not live freshness claims. The validator enforces structure there, but wall-clock staleness errors apply only to real targets under `targets/`, or everywhere when an explicit `--now` clock is passed to `scripts/check_studydd.py`.
 - Deterministic tooling (`run_demo_replay.py`, tests) should pin its own clock with `--now` instead of editing fixture timestamps to chase the wall clock.
+- A completed `recent_info_check` must be recorded via `scripts/record_source_check.py`. Only `outcome: fresh` suppresses repeated `recent_info_check` recommendations; any other outcome leaves the target's freshness unresolved.

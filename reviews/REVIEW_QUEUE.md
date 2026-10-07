@@ -31,7 +31,9 @@ Each review item should include:
 
 - Schedule a review after every partial, incorrect, unclear, repaired, or shaky answer.
 - Do not schedule a review for a single confident correct answer on a fresh skill.
-- First interval after a weak answer: 1 day.
-- Correct recall: double the interval, capped by target deadline or 30 days.
-- Lapse or partial: reset interval to 1 day and increment lapse count.
+- First interval after a weak answer: 0 or 1 day (see `protocols/SCHEDULE_REVIEW.md`).
+- Correct recall with medium or high confidence: double the interval, capped by the target deadline or 30 days.
+- Correct but low-confidence recall: repeat the interval.
+- Lapse or partial: reset the interval to its shortest window and increment the lapse count.
+- Record every completed review with `python3 scripts/schedule_review.py --review-id <id> --grade ... --confidence ...`.
 - Choose a review mode that differs from the original question mode when possible.

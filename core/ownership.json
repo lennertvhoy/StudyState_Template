@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "description": "Who owns each file the template ships. The longest matching pattern wins; * matches across /. Every file must match at least one pattern: scripts/template_release.py check fails on a file that does not. Tests that cast instances from the checkout, and the template's CI, are template_only: they cannot pass inside an instance, which gets its own CI from core/instance/validate.yml.",
+  "classes": {
+    "managed": [
+      "EXAMPLES/**",
+      "PROMPTS/**",
+      "activities/ACTIVITY_TEMPLATES.yaml",
+      "docs/**",
+      "protocols/**",
+      "requirements.txt",
+      "scripts/**",
+      "state/STATE_MANIFEST.yaml",
+      "study_skills/**"
+    ],
+    "seeded": [
+      ".gitattributes",
+      ".github/ISSUE_TEMPLATE/**",
+      ".github/pull_request_template.md",
+      ".gitignore",
+      "CONTRIBUTING.md",
+      "LICENSE.md",
+      "NEXT_ACTIONS.md",
+      "activities/ACTIVITY_LOG.md",
+      "reviews/**",
+      "scripts/projectstate_gate.py",
+      "sessions/**",
+      "sources/**",
+      "state/**",
+      "targets/**"
+    ],
+    "composite": [
+      "AGENTS.md",
+      "state/STUDYDD_TEMPLATE_VERSION.yaml"
+    ],
+    "template_only": [
+      ".github/workflows/validate.yml",
+      "CHANGELOG.md",
+      "PROJECT.md",
+      "README.md",
+      "STATE.yaml",
+      "core/**",
+      "docs/adr/**",
+      "evidence/**",
+      "scripts/template_release.py",
+      "scripts/test_compact_state.py",
+      "scripts/test_context_pack.py",
+      "scripts/test_create_instance.py",
+      "scripts/test_cross_platform_paths.py",
+      "scripts/test_demo_replay.py",
+      "scripts/test_instance_journey.py",
+      "scripts/test_instantiate_template.py",
+      "scripts/test_learning_activities.py",
+      "scripts/test_ownership.py",
+      "scripts/test_performance_policy.py",
+      "scripts/test_record_source_check.py",
+      "scripts/test_review_lifecycle.py",
+      "scripts/test_startup_budget.py",
+      "scripts/test_study_loop_smoke.py",
+      "scripts/test_study_skills.py",
+      "scripts/test_template_instance_boundary.py",
+      "scripts/test_template_release.py",
+      "scripts/test_update_instance.py",
+      "scripts/test_validate_touched_state.py",
+      "scripts/testkit.py",
+      "scripts/update_instance.py"
+    ]
+  }
+}

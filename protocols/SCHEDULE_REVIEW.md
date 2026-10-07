@@ -36,6 +36,24 @@ python3 scripts/schedule_review.py \
 
 `due_at` must be a timezone-aware ISO 8601 timestamp.
 
+## Record A Review Result
+
+When the learner has reviewed an existing item, record the outcome. Do not
+create a second item and do not edit `reviews/REVIEW_STATE.yaml` by hand.
+
+```bash
+python3 scripts/schedule_review.py \
+  --review-id rev_skill_example_20260624_183000 \
+  --grade correct \
+  --confidence high
+```
+
+The script updates `last_reviewed_at`, `due_at`, `interval_days`, `lapses`, and
+`last_result` in `reviews/REVIEW_STATE.yaml`, and refreshes the item's block in
+`reviews/REVIEW_QUEUE.md`. `select_next_study_action.py` prints this command
+for the item it recommends. Pass `--max-interval-days N` when the target's
+deadline should cap the interval.
+
 ## Review Item Format
 
 ```markdown
@@ -55,7 +73,10 @@ python3 scripts/schedule_review.py \
 
 ## Interval Guidance
 
-The simple transparent scheduler uses these intervals:
+The scheduler is a simple, transparent interval map. It never uses more than
+the grade, the confidence, and the previous interval.
+
+First schedule (a new review item):
 
 - wrong + low confidence: same day (0 days)
 - wrong + medium/high confidence: 1 day
@@ -63,8 +84,15 @@ The simple transparent scheduler uses these intervals:
 - correct + low confidence: 2 days
 - correct + medium confidence: 4 days
 - correct + high confidence: 7 days
-- repeated success: expand interval gradually
-- lapse: reset to the shortest interval and increment lapse count
+
+When a review is recorded:
+
+- correct + medium/high confidence: double the interval (at least 1 day), capped at 30 days or `--max-interval-days`
+- correct + low confidence: repeat the interval; shaky recall earns a repeat, not growth
+- partial or wrong: a lapse. Increment the lapse count and reset to the shortest window (0 or 1 day)
+- past lapses stay in `lapses`, but do not cap later successes
+
+`interval_days: 0` is valid: it means due again the same day.
 
 A future algorithm (FSRS, SM-2) can replace this map once the review data is stable, without changing the file surface.
 

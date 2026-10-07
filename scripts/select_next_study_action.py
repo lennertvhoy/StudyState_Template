@@ -4,71 +4,23 @@
 Usage:
     python3 scripts/select_next_study_action.py \
         --now "2026-06-25T10:00:00+02:00"
+
+Reading the review queue keeps each item's ``status`` current (scheduled, due,
+overdue). The file is rewritten only when a status actually changed, so asking
+for a recommendation does not dirty the worktree.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+from review_state import classify_due, load_yaml, parse_now, parse_timestamp, priority_rank, save_yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 SKILL_MAP_PATH = ROOT / "state" / "SKILL_MAP.yaml"
-STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
-NEXT_ACTIONS_PATH = ROOT / "NEXT_ACTIONS.md"
-
-
-def parse_now(value: str | None) -> datetime:
-    if value is None:
-        return datetime.now(timezone.utc)
-    dt = datetime.fromisoformat(value)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def load_yaml(path: Path) -> dict:
-    try:
-        import yaml
-    except ImportError:  # pragma: no cover
-        print("Error: PyYAML is required.")
-        sys.exit(1)
-
-    if not path.is_file():
-        return {}
-    try:
-        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception as exc:
-        print(f"Error reading {path}: {exc}")
-        sys.exit(1)
-
-
-def save_yaml(path: Path, data: dict) -> None:
-    import yaml
-    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
-
-
-def classify_due(item: dict, now: datetime) -> str:
-    due_at_str = item.get("due_at")
-    status = item.get("status")
-    if status in ("completed", "suspended"):
-        return status
-    if not due_at_str:
-        return "scheduled"
-    try:
-        due_at = datetime.fromisoformat(due_at_str)
-    except Exception:
-        return "scheduled"
-    if due_at.tzinfo is None:
-        due_at = due_at.replace(tzinfo=timezone.utc)
-
-    if due_at <= now:
-        if due_at < now - timedelta(days=1):
-            return "overdue"
-        return "due"
-    return "scheduled"
 
 
 def skill_label(skill_id: str, skill_map: dict) -> str:
@@ -76,6 +28,12 @@ def skill_label(skill_id: str, skill_map: dict) -> str:
         if skill.get("id") == skill_id:
             return skill.get("label") or skill_id
     return skill_id
+
+
+def sort_key(item: dict) -> tuple:
+    """Earliest due first (by instant, not string), then higher priority."""
+    due = parse_timestamp(item.get("due_at"))
+    return (due.timestamp() if due else float("inf"), priority_rank(item))
 
 
 def main() -> int:
@@ -86,14 +44,17 @@ def main() -> int:
     now = parse_now(args.now)
     review_state = load_yaml(REVIEW_STATE_PATH)
     skill_map = load_yaml(SKILL_MAP_PATH)
-    study_state = load_yaml(STUDY_STATE_PATH)
 
     items = review_state.get("review_items") or []
 
-    # Refresh statuses in place.
+    changed = False
     for item in items:
-        item["status"] = classify_due(item, now)
-    save_yaml(REVIEW_STATE_PATH, review_state)
+        status = classify_due(item, now)
+        if item.get("status") != status:
+            item["status"] = status
+            changed = True
+    if changed:
+        save_yaml(REVIEW_STATE_PATH, review_state)
 
     due = [item for item in items if item.get("status") == "due"]
     overdue = [item for item in items if item.get("status") == "overdue"]
@@ -108,9 +69,8 @@ def main() -> int:
         print("Reason: no reviews are currently due or overdue.")
         return 0
 
-    # Pick the best candidate: overdue first, then earliest due, then highest priority.
-    candidates = overdue or due
-    candidates.sort(key=lambda item: (item.get("due_at") or "", item.get("priority") or "normal"))
+    # Overdue first, then earliest due, then highest priority.
+    candidates = sorted(overdue or due, key=sort_key)
     chosen = candidates[0]
     chosen_id = chosen.get("id", "<unknown>")
     chosen_skill = chosen.get("skill_id", "<unknown>")
@@ -132,14 +92,11 @@ def main() -> int:
     print('Say "override review because <reason>" and the agent must record the override.')
     print("")
     print('Recommended by StudyState: review first. You can override, but this is the highest-retention move.')
-
-    # Surface in NEXT_ACTIONS.md if an overdue item is not already mentioned.
-    if NEXT_ACTIONS_PATH.is_file() and overdue:
-        next_text = NEXT_ACTIONS_PATH.read_text(encoding="utf-8")
-        if chosen_id not in next_text:
-            # We do not rewrite NEXT_ACTIONS.md automatically; the agent should
-            # propose the update. This script only reports the recommendation.
-            pass
+    print("")
+    print(
+        "After the review, record the result with: python3 scripts/schedule_review.py "
+        f"--review-id {chosen_id} --grade <wrong|partial|correct> --confidence <low|medium|high>"
+    )
 
     return 0
 

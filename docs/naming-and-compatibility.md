@@ -42,9 +42,10 @@ Legacy spellings still used as machine identifiers include:
 | lowercase `studydd` in package/import/schema IDs downstream | StatePort compatibility IDs |
 
 Every remaining legacy occurrence is classified as a **machine identifier**
-or a **historical record** (`Evidence/`, `docs/superpowers/` archives are not
-rewritten). Unclassified legacy wording on a current user-facing surface is a
-migration defect; fix it when found.
+or a **historical record** (the pre-0.12.0 evidence bundles and design plans
+left the tree and live in Git history, at the local tag `pre-v6-core`).
+Unclassified legacy wording on a current user-facing surface is a migration
+defect; fix it when found.
 
 ## Compatibility rules for agents
 

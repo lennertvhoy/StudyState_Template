@@ -1,0 +1,33 @@
+# Canonical current truth. Keep exactly one active slice; history belongs in Git.
+# This file coordinates work on the repository. The learner's study state lives in state/.
+version: "projectstate-template-v6"
+profile: core
+project:
+  outcome_ref: "PROJECT.md#outcome"
+current_slice:
+  id: bootstrap-001
+  objective: "Initialize the learner profile and first target, then complete one honest study loop."
+  status: planned
+  # Human-owned. Agents may report results but may not weaken these criteria.
+  acceptance:
+    - "The learner profile and first target exist and python3 scripts/check_studydd.py passes in learner_instance mode."
+    - "One question, its graded answer, an evidence entry, and a review are recorded for the first target."
+    - "The learner can resume from .studydd/context_pack.md and NEXT_ACTIONS.md alone."
+  primary_journey:
+    description: "Run one StudyState session with the agent: orient, ask one question, grade it, record evidence and a review, and write the next action."
+    command: "Not yet defined — record the exact command or session reference the human authorizes."
+    environment: "Not yet defined — record the representative environment."
+    status: not_run
+    evidence: "evidence/bootstrap-001/summary.md"
+validation:
+  primary_journey: not_run
+  automated_tests: not_run
+  human_acceptance: pending
+delivery_boundary:
+  name: first_study_loop
+  failed_attempts: []
+  simplification_review: null
+blockers:
+  - "The learner and the outcome require human confirmation."
+risks: []
+next_action: "Confirm PROJECT.md, initialize the learner profile and first target, then run the first study session."

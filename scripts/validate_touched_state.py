@@ -22,6 +22,7 @@ REVIEW_STATE_PATH = ROOT / "reviews" / "REVIEW_STATE.yaml"
 STUDY_STATE_PATH = ROOT / "state" / "STUDY_STATE.yaml"
 NEXT_ACTIONS_PATH = ROOT / "NEXT_ACTIONS.md"
 SESSION_LOG_PATH = ROOT / "sessions" / "SESSION_LOG.md"
+EVIDENCE_LOG_PATH = ROOT / "state" / "EVIDENCE_LOG.md"
 
 
 def load_yaml(path: Path) -> dict:
@@ -86,6 +87,28 @@ def evidence_by_id(evidence_index: dict, evidence_id: str) -> dict | None:
     return None
 
 
+def find_evidence(evidence_id: str) -> tuple[dict | None, bool]:
+    """Look an evidence ID up, returning the record and whether the index was stale.
+
+    ``state/EVIDENCE_INDEX.yaml`` is derived by ``compact_state.py``, which the fast
+    path deliberately does not run on every turn. Evidence appended since the last
+    compaction is therefore missing from it. The audit log is the source of truth, so
+    a miss falls back to one targeted parse of it instead of failing a fresh append.
+    """
+    item = evidence_by_id(load_evidence_index(), evidence_id)
+    if item:
+        return item, False
+    if not EVIDENCE_LOG_PATH.is_file():
+        return None, False
+    from compact_state import parse_evidence_items
+
+    text = EVIDENCE_LOG_PATH.read_text(encoding="utf-8")
+    for candidate in parse_evidence_items(text):
+        if candidate.get("evidence_id") == evidence_id:
+            return candidate, True
+    return None, False
+
+
 def review_by_id(review_state: dict, review_id: str) -> dict | None:
     for item in review_state.get("review_items") or []:
         if item.get("id") == review_id:
@@ -132,11 +155,12 @@ def validate_skill(skill_id: str) -> list[str]:
 
 def validate_evidence(evidence_id: str) -> list[str]:
     errors: list[str] = []
-    evidence_index = load_evidence_index()
-    item = evidence_by_id(evidence_index, evidence_id)
+    item, from_log = find_evidence(evidence_id)
     if not item:
-        errors.append(f"Evidence '{evidence_id}' not found in state/EVIDENCE_INDEX.yaml")
+        errors.append(f"Evidence '{evidence_id}' not found in state/EVIDENCE_INDEX.yaml or state/EVIDENCE_LOG.md")
         return errors
+    if from_log:
+        print(f"Note: '{evidence_id}' is in the evidence log but not yet in the index; compact_state.py refreshes it at the session boundary.")
 
     skill_id = item.get("skill_id")
     if skill_id and not skill_by_id(load_skill_map(), skill_id):
@@ -163,7 +187,7 @@ def validate_review(review_id: str) -> list[str]:
     if skill_id and not skill_by_id(load_skill_map(), skill_id):
         errors.append(f"Review '{review_id}' references unknown skill '{skill_id}'")
 
-    if evidence_id and not evidence_by_id(load_evidence_index(), evidence_id):
+    if evidence_id and not find_evidence(evidence_id)[0]:
         errors.append(f"Review '{review_id}' references unknown evidence '{evidence_id}'")
 
     due_at = item.get("due_at")
@@ -198,8 +222,8 @@ def validate_session(session_id: str) -> list[str]:
         for ref in refs:
             if ref.lower() in ("none", "n/a", "-", ""):
                 continue
-            if not evidence_by_id(load_evidence_index(), ref):
-                errors.append(f"Session log evidence reference '{ref}' not found in index")
+            if not find_evidence(ref)[0]:
+                errors.append(f"Session log evidence reference '{ref}' not found in the index or the evidence log")
 
     return errors
 

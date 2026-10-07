@@ -1,6 +1,4 @@
 ---
-review_items: []
-
 # Machine-readable review state for StudyState.
 #
 # This file is the reliable agent/validator surface. Keep it in sync with the
@@ -21,6 +19,7 @@ review_items: []
 #   status: scheduled
 #   source: "missed_question"
 #   override_count: 0
+#   last_result: correct   # added when a review is recorded (wrong | partial | correct)
 #
 # Status values:
 #   scheduled  - review planned but not yet due
@@ -28,3 +27,5 @@ review_items: []
 #   overdue    - review past due_at
 #   completed  - reviewed successfully
 #   suspended  - paused (e.g., blocked prerequisite)
+
+review_items: []
