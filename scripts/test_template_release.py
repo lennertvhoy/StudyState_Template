@@ -164,6 +164,34 @@ def test_git_identity_is_not_forced_on_the_learner() -> None:
             assert local, "without any identity a placeholder lets the first commit succeed"
 
 
+def test_a_fork_or_template_copy_under_another_name_can_cast_instances() -> None:
+    """GitHub's "Use this template" lets anyone pick any name; the mode marker decides, not the remote."""
+    with testkit.tempdir("studystate-release-") as tmp:
+        copy = testkit.copy_template(Path(tmp), "my-study-template")
+        testkit.git(copy, "remote", "set-url", "origin", "https://github.com/someone/my-study.git")
+        check = testkit.script("check_studydd.py", cwd=copy, check=False)
+        assert check.returncode == 0, check.stdout + check.stderr
+        assert "fine for a fork" in check.stdout, "the validator explains instead of failing"
+
+        inst = testkit.make_learner_instance(Path(tmp), template=copy)
+        assert testkit.script("check_studydd.py", cwd=inst, check=False).returncode == 0
+
+        # The safeguard that matters is kept: an instance must never point at the template remote.
+        testkit.git(inst, "remote", "set-url", "origin", "https://github.com/lennertvhoy/StudyState_Template.git")
+        wrong = testkit.script("check_studydd.py", cwd=inst, check=False)
+        assert wrong.returncode == 1 and "cannot use the StudyState_Template remote" in wrong.stdout
+
+
+def test_an_instance_can_be_cast_without_a_remote() -> None:
+    """A learner with no GitHub repository yet should not have to invent a URL."""
+    with testkit.tempdir("studystate-release-") as tmp:
+        target = Path(tmp) / "Study_NoRemote"
+        result = testkit.script("create_instance.py", "--target", str(target), cwd=ROOT, check=False)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert testkit.run(["git", "remote"], cwd=target).stdout.strip() == ""
+        assert testkit.script("check_studydd.py", cwd=target, check=False).returncode == 0
+
+
 def test_creating_inside_the_template_is_refused() -> None:
     with testkit.tempdir("studystate-release-") as tmp:
         copy = testkit.copy_template(Path(tmp))

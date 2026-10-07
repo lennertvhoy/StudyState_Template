@@ -54,6 +54,11 @@ every later release is then `mechanical`.
 - The onboarding docs told people to clone the template, open it in an agent, and say "initialize
   this copy", which a template-mode agent must refuse. They now start by casting an instance.
 - Prose said "StudyDD" in files merged from older work; it says StudyState.
+- **A fork, or a copy made with GitHub's "Use this template" button under another name, was
+  rejected.** `check_studydd.py` errored and `create_instance.py` refused unless the remote was named
+  `StudyState_Template`. The mode marker decides now; the remote name only adds caution (an instance
+  pointing at the template remote is still an error).
+- `create_instance.py --remote` is optional, so a learner with no repository yet need not invent a URL.
 
 ### Added
 
@@ -79,6 +84,8 @@ every later release is then `mechanical`.
 - `scripts/test_startup_budget.py` fails if a contract, prompt, or doc tells an agent to read
   everything, if the contract and `PERFORMANCE_BUDGET.yaml` disagree, if a protocol is missing from
   `protocols/README.md`, or if a fresh instance's start-up reading outgrows its budget.
+- `SECURITY.md`, a documentation integrity test (`scripts/test_docs.py`: relative links and named files must
+  exist), and a CI badge in the README.
 - `.gitattributes` pins LF; the tools preserve a uniformly CRLF `AGENTS.md` and refuse mixed endings.
 - `docs/UPGRADING.md`, `docs/architecture.md`, `docs/worked-state-update.md`, and ADRs.
 

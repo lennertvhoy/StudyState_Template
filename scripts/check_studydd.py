@@ -486,9 +486,12 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
 
     if mode == "template":
         if has_remote and not is_template_remote:
-            errors.append(
-                "Template mode should use the StudyState_Template remote. "
-                "If this is a new learner instance, switch mode to bootstrap first."
+            # The mode marker is the authority. A fork, or a copy made with GitHub's
+            # "Use this template" button under another name, is still the mold.
+            warnings.append(
+                "Template mode with a remote that is not StudyState_Template: fine for a fork or a copy "
+                "of the template. If this is a learner's repository, run scripts/create_instance.py "
+                "instead of studying here."
             )
         if is_template_remote and not mode_data.get("public_safe", True):
             errors.append("Template mode requires public_safe: true")

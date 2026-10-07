@@ -1,5 +1,7 @@
 # StudyState_Template
 
+[![Validate](https://github.com/lennertvhoy/StudyState_Template/actions/workflows/validate.yml/badge.svg)](https://github.com/lennertvhoy/StudyState_Template/actions/workflows/validate.yml)
+
 **Repo-native study brain for coding agents.**
 
 StudyState is not a human-facing app. It is a study brain that a coding agent (Codex, Claude
@@ -34,18 +36,28 @@ they never record. StudyState makes learning state explicit, evidence-based, and
 You need Python 3.10 or newer, Git, and a coding agent. PyYAML is the only dependency, and
 nothing installs without your consent (`docs/setup.md`).
 
-```bash
-# from a checkout of this template: cast your own instance
-python3 scripts/create_instance.py \
-  --target ../Study_Me \
-  --remote https://github.com/example/Study_Me.git
-```
+1. **Get the template.** Click "Use this template" on GitHub, or clone it. Any name works.
 
-The remote is where you may later push; nothing is pushed. Then open `../Study_Me` in your
-coding agent, paste `PROMPTS/coding_agent_start_prompt.md`, and tell it what you want to learn:
+   ```bash
+   git clone https://github.com/lennertvhoy/StudyState_Template.git
+   cd StudyState_Template
+   ```
 
-> Initialize this StudyState instance for me. I want to prepare for a certification exam. Ask me
-> only the essential setup questions first.
+2. **Cast your own instance** from that checkout. Do not study inside the template itself.
+
+   ```bash
+   python3 scripts/create_instance.py \
+     --target ../Study_Me \
+     --remote https://github.com/example/Study_Me.git
+   ```
+
+   `--remote` is optional; it is where you may later push. Nothing is pushed.
+
+3. **Open `../Study_Me` in your coding agent,** paste `PROMPTS/coding_agent_start_prompt.md`, and
+   tell it what you want to learn:
+
+   > Initialize this StudyState instance for me. I want to prepare for a certification exam. Ask me
+   > only the essential setup questions first.
 
 The agent verifies the repository, builds a compact context pack, recommends one activity, asks one
 question, grades your actual answer, records evidence, schedules a review if the answer was weak,

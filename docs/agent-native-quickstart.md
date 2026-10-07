@@ -20,7 +20,7 @@ StudyState is easiest when you use it with a coding agent. You do not need to ed
      --remote https://github.com/example/Study_Me.git
    ```
 
-   The remote is where you may later push. Nothing is pushed. The script copies only what a
+   The remote is optional (leave `--remote` out if you have none yet); it is where you may later push. Nothing is pushed. The script copies only what a
    learner needs, starts a fresh Git history, and validates the result.
 
 2. **Open the new folder** (`Study_Me`) in your coding agent.

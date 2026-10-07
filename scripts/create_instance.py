@@ -119,7 +119,7 @@ def write_lock_for(target: Path, ownership: own.Ownership, version: str, commit:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Create a StudyState learner instance")
     parser.add_argument("--target", required=True, help="Target directory for the instance")
-    parser.add_argument("--remote", required=True, help="Git remote URL for the instance")
+    parser.add_argument("--remote", default=None, help="Git remote URL for the instance (optional; add one later with git remote add)")
     args = parser.parse_args(argv)
 
     target = Path(args.target).resolve()
@@ -134,11 +134,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: current repo is not in template mode (mode={mode}).")
         return 1
 
+    # The mode marker is the authority, so a fork or a copy made with GitHub's "Use this
+    # template" button works under any name. Note it, so a wrong checkout is noticed.
     remotes = run(["git", "remote", "-v"], ROOT, check=False).stdout
-    # Accept the legacy StudyDD_Template remote name as a compatibility alias.
     if "StudyState_Template" not in remotes and "StudyDD_Template" not in remotes:
-        print("Error: current repo does not appear to be the StudyState_Template remote.")
-        return 1
+        print("Note: this checkout's remote is not StudyState_Template (a fork or a template copy). Continuing: its mode is template.")
 
     # 2. Refuse unsafe targets.
     if is_inside(target, ROOT):
@@ -204,7 +204,8 @@ def main(argv: list[str] | None = None) -> int:
         run(["git", "config", "user.name", AGENT_NAME], target)
     if not run(["git", "config", "user.email"], target, check=False).stdout.strip():
         run(["git", "config", "user.email", AGENT_EMAIL], target)
-    run(["git", "remote", "add", "origin", remote], target)
+    if remote:
+        run(["git", "remote", "add", "origin", remote], target)
 
     # 7. Switch mode to bootstrap, keeping the lifecycle documentation in the file.
     print("4. Switching to bootstrap mode")

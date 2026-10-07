@@ -21,8 +21,10 @@ Before casting, confirm the source template:
   `StudyDD_Template` URL redirects to it and is still accepted)
 - `state/STUDYDD_MODE.yaml` says `mode: template`
 
-If the source repo does not look like the template, stop and ask the learner for the correct
-template path or remote.
+A fork, or a copy made with GitHub's "Use this template" button, works under any name: the mode
+marker decides, not the remote. If the source repo does not look like the template (no
+`state/STUDYDD_MODE.yaml`, or a mode other than `template`), stop and ask the learner for the
+correct template path or remote.
 
 ## Target Directory Selection
 
