@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Child processes decode and encode as UTF-8 on every platform.
+  PYTHONUTF8: "1"
+
 jobs:
   validate:
     runs-on: ${{ matrix.os }}
@@ -23,7 +27,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -31,62 +35,34 @@ jobs:
       - name: Run environment check
         run: python scripts/check_environment.py
 
-      - name: Run cross-platform path tests
-        run: python scripts/test_cross_platform_paths.py
+      # Discovers every scripts/test_*.py, so a new test is run without editing this file.
+      - name: Run the test suite
+        run: python scripts/run_tests.py
+
+      # Tests must not depend on the wall clock: run them 400 days in the future.
+      - name: Run the test suite 400 days ahead
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/run_tests.py --clock-offset-days 400
 
       - name: Run validator
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/check_studydd.py
 
-      - name: Run validator reference-snapshot tests
+      - name: Check the template release surface
         if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_check_studydd_examples.py
+        run: python scripts/template_release.py check
 
-      - name: Run instantiation smoke test
+      - name: Run the ProjectState gate
         if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_instantiate_template.py
+        run: python scripts/projectstate_gate.py
 
-      - name: Run study-loop smoke test
+      - name: Lint (errors only)
         if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_study_loop_smoke.py
+        run: |
+          pip install ruff
+          ruff check scripts --select F,E9
 
-      - name: Run demo replay test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_demo_replay.py
-
-      - name: Run compact state test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_compact_state.py
-
-      - name: Run context pack test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_context_pack.py
-
-      - name: Run study skills test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_study_skills.py
-
-      - name: Run performance policy test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_performance_policy.py
-
-      - name: Run targeted validator test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_validate_touched_state.py
-
-      - name: Run source freshness test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_source_freshness.py
-
-      - name: Run question quality test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_question_quality.py
-
-      - name: Run learner adaptation test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_learner_adaptation.py
-
-      - name: Check source freshness for demo target
+      - name: Check source freshness for the demo target
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/check_source_freshness.py --target-id demo-ai-search-exam --now "2026-06-24T12:00:00+00:00"
 
@@ -98,18 +74,32 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/suggest_study_adjustment.py --demo
 
-      - name: Run learning activities test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_learning_activities.py
-
-      - name: Run next activity decision test
-        if: matrix.os == 'ubuntu-latest'
-        run: python scripts/test_next_activity_decision.py
-
       - name: Run activity planner demo
         if: matrix.os == 'ubuntu-latest'
         run: python scripts/plan_learning_activity.py --demo
 
+      - name: Run source check recording demo
+        if: matrix.os == 'ubuntu-latest'
+        run: python scripts/record_source_check.py --demo
+
       - name: Check whitespace
         if: matrix.os == 'ubuntu-latest'
         run: git diff --check
+
+  # README promises Python 3.10 or newer; this is the job that tests it.
+  minimum-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the test suite
+        run: python scripts/run_tests.py

@@ -15,9 +15,11 @@ from __future__ import annotations
 import argparse
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from check_source_freshness import classify_source
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -48,6 +50,10 @@ REQUIRED_DOC_FILES = [
     "docs/demo-walkthrough.md",
     "docs/linkedin-product-blurb.md",
     "docs/setup.md",
+    "docs/README.md",
+    "docs/architecture.md",
+    "docs/worked-state-update.md",
+    "docs/UPGRADING.md",
 ]
 
 REQUIRED_STATE_FILES = [
@@ -129,6 +135,9 @@ REQUIRED_PROTOCOL_FILES = [
     "protocols/VOICE_NOTE_REVIEW_POLICY.md",
     "protocols/INTERVIEW_PREP_POLICY.md",
     "protocols/PRESENTATION_PREP_POLICY.md",
+    "protocols/RECORD_SOURCE_CHECK.md",
+    "protocols/README.md",
+    "protocols/TEMPLATE_INSTANCE_BOUNDARY.md",
 ]
 
 REQUIRED_PROMPT_FILES = [
@@ -158,7 +167,6 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/schedule_review.py",
     "scripts/select_next_study_action.py",
     "scripts/run_demo_replay.py",
-    "scripts/test_demo_replay.py",
     "scripts/compact_state.py",
     "scripts/build_context_pack.py",
     "scripts/validate_touched_state.py",
@@ -171,12 +179,15 @@ REQUIRED_SCRIPT_FILES = [
     "scripts/test_learner_adaptation.py",
     "scripts/plan_learning_activity.py",
     "scripts/record_activity_result.py",
+    "scripts/record_source_check.py",
+    "scripts/review_state.py",
+    "scripts/state_io.py",
+    "scripts/template_ownership.py",
+    "scripts/run_tests.py",
     "scripts/analyze_voice_note.py",
     "scripts/analyze_presentation_rehearsal.py",
-    "scripts/test_learning_activities.py",
     "scripts/check_environment.py",
     "scripts/setup_studydd.py",
-    "scripts/test_cross_platform_paths.py",
 ]
 
 REQUIRED_AI103_EXAMPLE_FILES = [
@@ -307,6 +318,14 @@ SOURCE_VOLATILITY_VALUES = {
     "live",
 }
 
+SOURCE_OUTCOMES = {
+    "fresh",
+    "stale",
+    "missing",
+    "unverified",
+    "unknown",
+}
+
 QUESTION_MODES = {
     "authoritative_current",
     "conceptual_practice",
@@ -315,14 +334,8 @@ QUESTION_MODES = {
     "remediation",
 }
 
-# Duplicated from scripts/check_source_freshness.py to keep this script self-contained.
-VOLATILITY_MAX_AGE_DAYS = {
-    "stable": 3650,
-    "slow_changing": 730,
-    "moderate": 90,
-    "volatile": 30,
-    "live": 1,
-}
+BOUNDARY_VALUES = {"template", "instance", "generated"}
+
 
 
 def check_files() -> list[str]:
@@ -473,9 +486,12 @@ def check_mode(yaml: object, warnings: list[str]) -> list[str]:
 
     if mode == "template":
         if has_remote and not is_template_remote:
-            errors.append(
-                "Template mode should use the StudyState_Template remote. "
-                "If this is a new learner instance, switch mode to bootstrap first."
+            # The mode marker is the authority. A fork, or a copy made with GitHub's
+            # "Use this template" button under another name, is still the mold.
+            warnings.append(
+                "Template mode with a remote that is not StudyState_Template: fine for a fork or a copy "
+                "of the template. If this is a learner's repository, run scripts/create_instance.py "
+                "instead of studying here."
             )
         if is_template_remote and not mode_data.get("public_safe", True):
             errors.append("Template mode requires public_safe: true")
@@ -1111,8 +1127,6 @@ def check_review_state(yaml: object, warnings: list[str]) -> list[str]:
     if next_actions_path.is_file():
         next_actions_text = next_actions_path.read_text(encoding="utf-8")
 
-    now = datetime.now(timezone.utc)
-
     for item in items:
         rid = item.get("id") or "<unknown>"
         status = item.get("status")
@@ -1122,8 +1136,11 @@ def check_review_state(yaml: object, warnings: list[str]) -> list[str]:
             )
 
         interval = item.get("interval_days")
-        if interval is None or not isinstance(interval, (int, float)) or interval <= 0:
-            errors.append(f"Review '{rid}' must have a positive interval_days value")
+        # 0 is valid: a wrong, low-confidence answer is due again the same day.
+        if isinstance(interval, bool) or not isinstance(interval, (int, float)) or interval < 0:
+            errors.append(
+                f"Review '{rid}' must have a non-negative interval_days value (0 means due the same day)"
+            )
 
         skill_id = item.get("skill_id")
         if skill_id and skill_id not in skill_ids:
@@ -1341,10 +1358,98 @@ def check_state_manifest(yaml: object) -> list[str]:
         rel_path = ROOT / rel
         if meta.get("load_default") and not rel_path.is_file():
             errors.append(f"state/STATE_MANIFEST.yaml '{rel}' is load_default but missing")
+        boundary = meta.get("boundary")
+        if boundary not in BOUNDARY_VALUES:
+            errors.append(
+                f"state/STATE_MANIFEST.yaml '{rel}' has missing or invalid boundary {boundary!r}; "
+                f"must be one of {sorted(BOUNDARY_VALUES)}"
+            )
 
     missing_roles = required_roles - seen_roles
     for role in sorted(missing_roles):
         errors.append(f"state/STATE_MANIFEST.yaml missing at least one file with role '{role}'")
+
+    return errors
+
+
+def _audit_log_has_entries(text: str, content_header: str) -> bool:
+    """Return True if an append-only audit log section contains real entries."""
+    section = text.split(content_header, 1)[1] if content_header in text else text
+    entry_markers = ("- **Date:**", "- **Activity ID:**", "- **Timestamp:**")
+    has_placeholder = "None yet." in section
+    has_entry = any(marker in section for marker in entry_markers)
+    return has_entry or not has_placeholder
+
+
+def check_template_boundary(yaml: object) -> list[str]:
+    """Fail when instance-boundary files contain learner data in template mode."""
+    errors: list[str] = []
+    if yaml is None:
+        return errors
+
+    mode_path = ROOT / "state" / "STUDYDD_MODE.yaml"
+    mode_data = _load_yaml(mode_path, yaml)
+    if mode_data.get("mode") != "template":
+        return errors
+
+    manifest_path = ROOT / "state" / "STATE_MANIFEST.yaml"
+    manifest = _load_yaml(manifest_path, yaml)
+    files = manifest.get("files") or {}
+    if not isinstance(files, dict):
+        return errors
+
+    instance_checks: dict[str, object] = {
+        "state/STUDY_STATE.yaml": lambda d: (
+            (d.get("learner") or {}).get("name")
+            or d.get("active_target_id")
+            or d.get("targets")
+            or d.get("skills")
+            or d.get("session_history")
+        ),
+        "state/SKILL_MAP.yaml": lambda d: d.get("skills"),
+        "reviews/REVIEW_STATE.yaml": lambda d: d.get("review_items"),
+        "state/LEARNER_PROFILE.yaml": lambda d: (
+            (d.get("adaptation_state") or {}).get("methods_tried")
+            or (d.get("control") or {}).get("learner_overrides")
+            or (d.get("control") or {}).get("agent_recommendations_declined")
+        ),
+        "sources/SOURCE_STATE.yaml": lambda d: d.get("sources"),
+        "state/ACTIVITY_STATE.yaml": lambda d: (
+            (d.get("active_activity") or {}).get("id")
+            or d.get("recent_activities")
+        ),
+    }
+
+    log_headers = {
+        "state/EVIDENCE_LOG.md": "## Evidence items",
+        "sessions/SESSION_LOG.md": "## Sessions",
+        "reviews/REVIEW_OVERRIDES.md": "## Overrides",
+        "activities/ACTIVITY_LOG.md": "## Activities",
+    }
+
+    for rel, meta in files.items():
+        if meta.get("boundary") != "instance":
+            continue
+        if rel in instance_checks:
+            path = ROOT / rel
+            if not path.is_file():
+                continue
+            data = _load_yaml(path, yaml)
+            if instance_checks[rel](data):
+                errors.append(
+                    f"Template boundary violation: {rel} contains learner-specific data. "
+                    "Create a learner instance with scripts/create_instance.py instead."
+                )
+        elif rel in log_headers:
+            path = ROOT / rel
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8")
+            if _audit_log_has_entries(text, log_headers[rel]):
+                errors.append(
+                    f"Template boundary violation: {rel} contains learner-specific data. "
+                    "Create a learner instance with scripts/create_instance.py instead."
+                )
 
     return errors
 
@@ -1552,48 +1657,6 @@ def check_option_position_randomization() -> list[str]:
     return errors
 
 
-def _classify_source_freshness(
-    source: dict, now: datetime, target_volatility: str
-) -> tuple[str, str | None]:
-    """Return (freshness_status, reason) for a single source entry.
-
-    Mirrors the logic in scripts/check_source_freshness.py so the validator stays
-    self-contained. Statuses: fresh, stale, unverified, missing_timestamp.
-    """
-    if source.get("usable_for_questions") is False:
-        return "unverified", "usable_for_questions is false"
-
-    expires_at = source.get("expires_at")
-    if expires_at:
-        try:
-            expiry = datetime.fromisoformat(str(expires_at))
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            if now <= expiry:
-                return "fresh", None
-            return "stale", f"expired at {expires_at}"
-        except Exception as exc:
-            return "missing_timestamp", f"invalid expires_at: {exc}"
-
-    last_checked_at = source.get("last_checked_at")
-    if last_checked_at:
-        try:
-            checked = datetime.fromisoformat(str(last_checked_at))
-            if checked.tzinfo is None:
-                checked = checked.replace(tzinfo=timezone.utc)
-        except Exception as exc:
-            return "missing_timestamp", f"invalid last_checked_at: {exc}"
-
-        volatility = source.get("volatility") or target_volatility
-        max_age_days = VOLATILITY_MAX_AGE_DAYS.get(volatility, 90)
-        expiry = checked + timedelta(days=max_age_days)
-        if now <= expiry:
-            return "fresh", None
-        return "stale", f"last checked {last_checked_at}; volatility {volatility} max age {max_age_days} days"
-
-    return "missing_timestamp", "no expires_at or last_checked_at"
-
-
 def _discover_question_files() -> list[Path]:
     """Return all question YAML files under targets/ and EXAMPLES/."""
     found: list[Path] = []
@@ -1667,6 +1730,28 @@ def check_source_state(yaml: object) -> list[str]:
         usable = source.get("usable_for_questions", True)
         if not isinstance(usable, bool):
             errors.append(f"Source '{sid}' usable_for_questions must be a boolean")
+
+        last_check = source.get("last_check")
+        if last_check is not None:
+            if not isinstance(last_check, dict):
+                errors.append(f"Source '{sid}' last_check must be a mapping")
+            else:
+                outcome = last_check.get("outcome")
+                if outcome is not None and outcome not in SOURCE_OUTCOMES:
+                    errors.append(
+                        f"Source '{sid}' last_check.outcome {outcome!r} is invalid; "
+                        f"must be one of {sorted(SOURCE_OUTCOMES)}"
+                    )
+                checked_at = last_check.get("checked_at")
+                if checked_at is not None and _parse_iso_timestamp(checked_at) is None:
+                    errors.append(
+                        f"Source '{sid}' last_check.checked_at is not a valid timezone-aware ISO 8601 timestamp"
+                    )
+                checked_by = last_check.get("checked_by")
+                if checked_by is not None and checked_by not in ("agent", "learner"):
+                    errors.append(
+                        f"Source '{sid}' last_check.checked_by must be 'agent' or 'learner'"
+                    )
 
     return errors
 
@@ -1760,7 +1845,7 @@ def check_volatile_target_freshness(
                 continue
             if source.get("usable_for_questions") is False:
                 continue
-            status, _ = _classify_source_freshness(source, now, volatility)
+            status, _ = classify_source(source, now, volatility)
             if status == "fresh":
                 has_fresh_authoritative = True
                 break
@@ -1831,7 +1916,6 @@ def check_question_quality_records(
         qid = data.get("id") or path.stem
         rel = path.relative_to(ROOT)
 
-        target_id = data.get("target_id") or path.parent.parent.name
         target_data = _load_yaml(path.parent.parent / "TARGET.yaml", yaml)
         target_volatility = target_data.get("volatility") or "moderate"
         volatility = data.get("volatility") or target_volatility
@@ -1892,7 +1976,7 @@ def check_question_quality_records(
                     if source is None:
                         # Unknown source_id is already reported above.
                         continue
-                    status, reason = _classify_source_freshness(source, now, volatility)
+                    status, reason = classify_source(source, now, volatility)
                     if status != "fresh":
                         if _is_reference_snapshot(path) and not snapshot_clock_explicit:
                             # Reference fixture: timestamps are deterministic test
@@ -2023,6 +2107,7 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_generated_freshness(warnings))
         errors.extend(check_source_state(yaml))
         errors.extend(check_learner_profile(yaml))
+        errors.extend(check_template_boundary(yaml))
         errors.extend(check_volatile_target_freshness(yaml, warnings, now=now_override))
         errors.extend(check_question_quality_records(
             yaml, now=now_override, snapshot_clock_explicit=now_override is not None

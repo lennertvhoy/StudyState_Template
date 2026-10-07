@@ -10,7 +10,7 @@ Run a realistic exam-style drill inside StudyState.
 
 ## Setup
 
-1. Read all files listed in `AGENTS.md` "Required First Actions".
+1. Follow `AGENTS.md` "Session start": read the context pack, not the repo. Load no other file until the task needs it (`protocols/README.md` indexes the protocols).
 2. Run `python3 scripts/compact_state.py` and `python3 scripts/build_context_pack.py --task start_session`.
 3. Load the active target's study skill from `study_skills/<study_skill>/SKILL.md`.
 4. Run or perform the equivalent of `scripts/select_next_study_action.py`. If reviews are due or overdue, recommend handling them first; the learner may override for the drill.

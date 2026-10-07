@@ -11,9 +11,9 @@ durable, user-owned Stateware applications (`StatePort` repository).
 | Template (StateSpec) | this repository, the reusable mold |
 | Instance | a learner repo cast from this template (`scripts/create_instance.py`, `protocols/INSTANTIATE_TEMPLATE.md`) |
 | Canonical state | `state/`, `targets/`, `reviews/`, `sources/` plain files |
-| Evidence | `state/EVIDENCE_LOG.md`, `Evidence/`, session logs |
+| Evidence | `state/EVIDENCE_LOG.md`, session logs; `evidence/<slice>/summary.md` for repository work |
 | Lifecycle modes | `template` → `bootstrap` → `learner_instance` in `state/STUDYDD_MODE.yaml` |
-| Governance | validator gate (`scripts/check_studydd.py`), protocols, privacy review |
+| Governance | validator gate (`scripts/check_studydd.py`), the ProjectState v6 gate (`scripts/projectstate_gate.py`), protocols, privacy review |
 
 ## What StatePort consumes today
 
@@ -37,13 +37,14 @@ Consumer tooling depends on these staying stable across template releases:
 
 1. mode marker path and keys;
 2. template-version file path and keys;
-3. script entry points documented in AGENTS.md;
+3. the script entry points documented in `AGENTS.md` and `docs/architecture.md`;
 4. `.studydd/` generated-context paths;
 5. lifecycle mode values (`template`, `bootstrap`, `learner_instance`);
-6. question/review/evidence schema identifiers.
+6. question/review/evidence schema identifiers;
+7. the instance lock, `state/TEMPLATE_LOCK.json`, and its keys.
 
 Breaking any of these is a versioned migration, never a side effect of prose
-or feature work.
+or feature work. `docs/UPGRADING.md` explains how an instance follows a release.
 
 ## Open alignment work (external boundaries)
 

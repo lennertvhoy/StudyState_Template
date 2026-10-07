@@ -485,7 +485,7 @@ def main() -> int:
         print(f"\nRunning {test.__name__}...")
         try:
             test()
-            print(f"  PASSED")
+            print("  PASSED")
         except AssertionError as exc:
             print(f"  FAILED: {exc}")
             failures += 1

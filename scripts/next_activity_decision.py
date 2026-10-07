@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 from check_source_freshness import (
-    TargetFreshnessSummary,
     target_freshness_summary,
 )
 

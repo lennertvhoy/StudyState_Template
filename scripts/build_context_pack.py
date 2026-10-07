@@ -17,6 +17,7 @@ import importlib.util
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 from check_source_freshness import VOLATILITY_MAX_AGE_DAYS
 from next_activity_decision import (
@@ -88,7 +89,7 @@ def read_text(path: Path, max_chars: int | None = None) -> str:
     except Exception as exc:
         return f"[Error reading {path}: {exc}]"
     if max_chars is not None and len(text) > max_chars:
-        return text[:max_chars] + f"\n\n[... truncated at {max_chars} characters; full file in {path.relative_to(ROOT)}]"
+        return text[:max_chars] + f"\n\n[... truncated at {max_chars} characters; full file in {path.relative_to(ROOT).as_posix()}]"
     return text
 
 
@@ -582,24 +583,24 @@ def build_context_pack(
     ])
 
     if target_path:
-        included.append((str(target_path.relative_to(ROOT)), "active target metadata"))
+        included.append((target_path.relative_to(ROOT).as_posix(), "active target metadata"))
         body_lines.append(f"- **Target ID:** {active_target_id(study_state)}")
-        body_lines.append(f"- **Target file:** {target_path.relative_to(ROOT)}")
+        body_lines.append(f"- **Target file:** {target_path.relative_to(ROOT).as_posix()}")
         target_data = load_yaml(target_path)
         body_lines.append(f"- **Target type:** {target_data.get('type', 'not set')}")
         if study_skill:
             body_lines.append(f"- **Study skill:** {study_skill}")
             skill_file = ROOT / "study_skills" / study_skill / "SKILL.md"
             if skill_file.is_file():
-                included.append((str(skill_file.relative_to(ROOT)), f"active study skill policy for {study_skill}"))
+                included.append((skill_file.relative_to(ROOT).as_posix(), f"active study skill policy for {study_skill}"))
             else:
-                body_lines.append(f"- **Warning:** declared study skill '{study_skill}' has no SKILL.md at {skill_file.relative_to(ROOT)}")
-                skipped.append((str(skill_file.relative_to(ROOT)), "declared study skill file missing"))
+                body_lines.append(f"- **Warning:** declared study skill '{study_skill}' has no SKILL.md at {skill_file.relative_to(ROOT).as_posix()}")
+                skipped.append((skill_file.relative_to(ROOT).as_posix(), "declared study skill file missing"))
         else:
             body_lines.append("- **Study skill:** generic (none declared)")
             generic_file = ROOT / "study_skills" / "generic" / "SKILL.md"
             if generic_file.is_file():
-                included.append((str(generic_file.relative_to(ROOT)), "generic fallback study skill"))
+                included.append((generic_file.relative_to(ROOT).as_posix(), "generic fallback study skill"))
     else:
         body_lines.append("- **Target ID:** none")
         skipped.append(("targets/<active>/TARGET.yaml", "no active target"))
@@ -929,7 +930,7 @@ def main() -> int:
         for rel, reason in skipped:
             print(f"- {rel}: {reason}")
     print("")
-    print(f"Output: {CONTEXT_PACK_PATH.relative_to(ROOT)}")
+    print(f"Output: {CONTEXT_PACK_PATH.relative_to(ROOT).as_posix()}")
     return 0
 
 

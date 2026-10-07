@@ -1,6 +1,19 @@
 ---
 # Canonical source freshness registry.
 # Template mode keeps this empty; learner instances populate it.
+#
+# Each source may include:
+#   id, target_ids, authority, usable_for_questions, volatility,
+#   freshness_window_days, last_checked_at, expires_at,
+#   and a nested last_check object:
+#     last_check:
+#       checked_at: ISO 8601
+#       outcome: fresh | stale | missing | unverified | unknown
+#       summary: "..."
+#       evidence_id: "..."
+#       activity_id: "..."
+#       checked_by: agent | learner
+# Use scripts/record_source_check.py to write completed checks.
 
 metadata:
   template_version: "0.9.0"

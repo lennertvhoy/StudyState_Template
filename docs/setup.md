@@ -23,7 +23,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python scripts/check_studydd.py
-python scripts/run_demo_replay.py
+python scripts/run_tests.py
 ```
 
 ## Quick start (Windows PowerShell)
@@ -33,7 +33,7 @@ py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python scripts/check_studydd.py
-python scripts/run_demo_replay.py
+python scripts/run_tests.py
 ```
 
 If `py` is not available on Windows, use `python` or `python3` instead, depending on what is installed.
@@ -89,22 +89,14 @@ After setup, run the repo health gate:
 python scripts/check_studydd.py
 ```
 
-You can also run the full test suite used by CI:
-
-```bash
-python scripts/test_instantiate_template.py
-python scripts/test_create_instance.py
-python scripts/test_study_loop_smoke.py
-python scripts/test_demo_replay.py
-python scripts/test_learning_activities.py
-python scripts/test_source_freshness.py
-python scripts/test_question_quality.py
-python scripts/test_learner_adaptation.py
-```
+`python scripts/run_tests.py` runs every test script in `scripts/` (it discovers them, so nothing is
+listed by hand) and is what CI runs. In a learner instance it runs the tests that apply there. In the
+template checkout it also runs the tests that cast instances, update them, and check the release surface;
+add `--clock-offset-days 400` to run them with the clock 400 days ahead.
 
 ## Run the demo replay
 
-The demo replay creates a temporary learner instance and walks through one full StudyState learning loop. It does not touch your repo state.
+From a checkout of the template (it needs `mode: template`), the demo replay creates a temporary learner instance and walks through one full StudyState learning loop. It does not touch your repo state.
 
 ```bash
 python scripts/run_demo_replay.py

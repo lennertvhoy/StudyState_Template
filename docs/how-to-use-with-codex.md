@@ -2,22 +2,24 @@
 
 ## Setup
 
-1. Clone or copy `StudyState_Template` into a folder.
-2. Open the folder in Codex.
+1. From a checkout of `StudyState_Template`, cast your own instance:
+   `python3 scripts/create_instance.py --target ../Study_Me --remote https://github.com/example/Study_Me.git`.
+   Do not study in the template itself; it is the mold (`docs/agent-native-quickstart.md`).
+2. Open the new `Study_Me` folder in Codex.
 
 ## Start A Study Session
 
 1. Open `PROMPTS/coding_agent_start_prompt.md`.
 2. Copy the entire prompt.
-3. Paste it into the Codex chat.
-4. Ask Codex to initialize your copy.
+3. Paste it into Codex.
+4. Ask Codex to initialize your instance.
 
 Example:
 
 ```text
 [paste the start prompt here]
 
-Initialize this StudyState copy for me. I want to prepare for a certification exam. Ask only the essential setup questions first.
+Initialize this StudyState instance for me. I want to prepare for an interview. Ask only the essential setup questions first.
 ```
 
 ## During The Session
@@ -35,7 +37,7 @@ Initialize this StudyState copy for me. I want to prepare for a certification ex
 
 ## Tips
 
-- Keep the whole repo in context so the agent can read and write state files.
-- If Codex loses context, paste the start prompt again and ask it to re-read the required files in `AGENTS.md`.
+- Keep the repository open so the agent can read and write state files.
+- If Codex loses context, paste the start prompt again. The agent needs only `AGENTS.md` and the context pack, not the whole repository.
 - Use `PROMPTS/exam_drill_prompt.md` for realistic practice.
 - Use `PROMPTS/reflection_prompt.md` after a tough session.

@@ -14,7 +14,6 @@ import argparse
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -220,7 +219,6 @@ def plan_and_record_activity(target: Path) -> None:
     activity_state = load_yaml(target / "state" / "ACTIVITY_STATE.yaml")
     active = activity_state.get("active_activity") or {}
     activity_id = active.get("id", "act_demo_unknown")
-    skill_id = active.get("skill_id", "demo-search-basics")
 
     print("The learner completed the activity outside the chat and submitted the result.")
     result = run(

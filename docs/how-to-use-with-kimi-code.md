@@ -2,22 +2,24 @@
 
 ## Setup
 
-1. Clone or copy `StudyState_Template` into a folder.
-2. Open the folder in Kimi Code.
+1. From a checkout of `StudyState_Template`, cast your own instance:
+   `python3 scripts/create_instance.py --target ../Study_Me --remote https://github.com/example/Study_Me.git`.
+   Do not study in the template itself; it is the mold (`docs/agent-native-quickstart.md`).
+2. Open the new `Study_Me` folder in Kimi Code.
 
 ## Start A Study Session
 
 1. Open `PROMPTS/coding_agent_start_prompt.md`.
 2. Copy the entire prompt.
-3. Paste it into the Kimi Code chat.
-4. Ask Kimi Code to initialize your copy.
+3. Paste it into Kimi Code.
+4. Ask Kimi Code to initialize your instance.
 
 Example:
 
 ```text
 [paste the start prompt here]
 
-Initialize this StudyState copy for me. I want to learn a professional skill. Ask only the essential setup questions first.
+Initialize this StudyState instance for me. I want to prepare for an interview. Ask only the essential setup questions first.
 ```
 
 ## During The Session

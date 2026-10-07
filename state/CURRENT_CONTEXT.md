@@ -30,5 +30,5 @@
 
 ## Next action
 
-1. Initialize the learner profile, add the first study target, build an initial skill map from trusted sources, and start one active tutoring question.
+1. Initialize the learner profile and the first target (see `PROMPTS/coding_agent_start_prompt.md`).
 

@@ -1,5 +1,0 @@
-StudyDD is not only a question generator. It can assign activities and review evidence.
-The learner completed the activity outside the chat and submitted the result.
-StudyDD reviewed the submitted evidence, updated skill state, scheduled review, and recorded the next action.
-15. Learner completed the activity outside the chat and submitted evidence.
-16. StudyDD reviewed the submitted evidence and updated state.

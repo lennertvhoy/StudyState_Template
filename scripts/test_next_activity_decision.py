@@ -7,7 +7,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 from next_activity_decision import choose_activity_decision
-from check_source_freshness import classify_source, target_freshness_summary
+from check_source_freshness import classify_source
 
 
 TEMPLATES = [

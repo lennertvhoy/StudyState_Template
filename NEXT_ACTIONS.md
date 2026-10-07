@@ -4,7 +4,7 @@
 
 ## Current next action
 
-1. Build the source-check completion flow (`feat/source-check-completion-flow`): when a learner completes a `recent_info_check`, provide a safe script/protocol path to record the checked source metadata into `sources/SOURCE_STATE.yaml`.
+1. Initialize the learner profile and the first target (see `PROMPTS/coding_agent_start_prompt.md`).
 
 ## Pending actions
 
@@ -13,8 +13,4 @@
 
 ## Recently completed
 
-- 2026-08-26: Adopted StudyState public naming: repository renamed to `StudyState_Template` (old URL redirects), prose updated, machine identifiers keep legacy `studydd` spellings (see `docs/naming-and-compatibility.md`, `docs/stateport-integration.md`).
-- 2026-08-26: Fixed the demo-freshness time bomb: `EXAMPLES/` fixtures no longer fail wall-clock validation; `check_studydd.py` and `plan_learning_activity.py` accept a deterministic `--now` clock; regression tests added.
-- 2026-06-27: Integrated source freshness state into next-activity decisions so `recent_info_check` keys off verified source freshness in `sources/SOURCE_STATE.yaml`, not only recent activity type.
-- 2026-06-27: Wired the shared next-activity recommendation and auditable `Rule: ...` reason into `scripts/build_context_pack.py`; added focused decision-rule tests.
-- 2026-06-27: Improved next-activity selection to recommend among exam-style question, spaced-repetition review, lab/practical exercise, diagram/visual explanation, and recent-info check.
+- None yet.

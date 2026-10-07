@@ -11,7 +11,7 @@ lets the learner accept/modify/override, and records evidence from the result.
 
 Questions are useful, but they are not always the best next move. Sometimes the learner needs a paper exercise, a video, a lab, a diagram, an interview rehearsal, a presentation rehearsal, a voice note, or an external-platform drill. The agent's job is to choose the activity that is most likely to produce evidence of competence given the current state.
 
-When `sources/SOURCE_STATE.yaml` shows freshness as missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the agent recommends a `recent_info_check` activity. The learner verifies current facts, sources, or exam objectives and submits source metadata or a short summary before the agent builds authoritative questions.
+When `sources/SOURCE_STATE.yaml` shows freshness as missing, stale, or unknown for a `moderate`, `volatile`, or `live` target, the agent recommends a `recent_info_check` activity. The learner verifies current facts, sources, or exam objectives and submits source metadata or a short summary before the agent builds authoritative questions. When the check is complete, record the activity result with `scripts/record_activity_result.py` and pass `--source-id` (plus the relevant source metadata flags); the script writes the source check back to `sources/SOURCE_STATE.yaml` automatically via `scripts/record_source_check.py` so future plans see the freshness signal.
 
 ## Inputs the agent must consider
 

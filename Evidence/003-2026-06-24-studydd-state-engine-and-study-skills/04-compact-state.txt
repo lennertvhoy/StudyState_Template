@@ -1,4 +1,0 @@
-Compacting StudyDD state...
-Updated state/CURRENT_CONTEXT.md
-Updated state/EVIDENCE_INDEX.yaml (0 evidence items)
-Updated sessions/SESSION_SUMMARIES.md

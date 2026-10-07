@@ -3,7 +3,7 @@
 > **Run one command and watch the StudyState learning loop happen.**
 
 ```bash
-python3 scripts/run_demo_replay.py
+python3 scripts/run_demo_replay.py   # from a checkout of the template
 ```
 
 This guide is for students, teachers, hiring managers, and anyone who wants to understand what StudyState does without reading the full agent protocol.

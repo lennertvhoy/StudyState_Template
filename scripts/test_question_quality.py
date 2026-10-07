@@ -19,10 +19,14 @@ SCRIPT_SRC = ROOT / "scripts" / "lint_questions.py"
 
 
 def run_script(tmp_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    """Copy the linter script into tmp_root so ROOT resolves to tmp_root."""
+    """Copy the linter and its local dependencies into tmp_root."""
     script_dst = tmp_root / "scripts" / "lint_questions.py"
     script_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(SCRIPT_SRC, script_dst)
+    shutil.copy(
+        ROOT / "scripts" / "check_source_freshness.py",
+        script_dst.parent / "check_source_freshness.py",
+    )
     return subprocess.run(
         [sys.executable, str(script_dst), *args],
         cwd=tmp_root,
@@ -334,7 +338,7 @@ def test_question_volatility_overrides_target() -> None:
         tmp_root = Path(tmp)
         target_id = "override-target"
         write_mode(tmp_root, "learner_instance")
-        # Target says moderate (90 days); question says live (1 day).
+        # Target says moderate (30 days); question says live (1 day).
         write_target(tmp_root, target_id, volatility="moderate")
         write_source_state(
             tmp_root,

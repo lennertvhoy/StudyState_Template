@@ -8,141 +8,118 @@
 
 - Do not personalize the template repo.
 - Do not put private learner state into the template repo.
-- Personalization happens only after the template has been cloned, its `.git/` removed, and Git reinitialized in a new learner directory.
-- The repo must pass through `bootstrap` mode before it becomes a `learner_instance`.
+- Personalization happens only in the new instance, after the template's Git history has been left behind.
+- The new repo passes through `bootstrap` mode before it becomes a `learner_instance`.
 
 ## Source Template Verification
 
-Before copying, confirm the source template:
+Before casting, confirm the source template:
 
-- repo path: the local checkout of the template (folder name
-  `StudyState_Template`; older checkouts may say `StudyDD_Template`)
-- remote: `https://github.com/lennertvhoy/StudyState_Template.git`
-  (the legacy `https://github.com/lennertvhoy/StudyDD_Template.git` URL
-  redirects to it and is still accepted)
+- repo path: the local checkout of the template (folder `StudyState_Template`; older
+  checkouts may say `StudyDD_Template`)
+- remote: `https://github.com/lennertvhoy/StudyState_Template.git` (the legacy
+  `StudyDD_Template` URL redirects to it and is still accepted)
 - `state/STUDYDD_MODE.yaml` says `mode: template`
 
-If the source repo does not look like the template, stop and ask the learner for the correct template path/remote.
+A fork, or a copy made with GitHub's "Use this template" button, works under any name: the mode
+marker decides, not the remote. If the source repo does not look like the template (no
+`state/STUDYDD_MODE.yaml`, or a mode other than `template`), stop and ask the learner for the
+correct template path or remote.
 
 ## Target Directory Selection
 
-1. Ask the learner for the new instance directory name, e.g. `Study_Me`.
-2. Confirm the target path, e.g. `~/Study_Me`.
-3. Verify the target directory does not already exist or is empty. If it exists and is not empty, stop and ask for confirmation.
-4. Verify the target directory is not inside the template repo.
+1. Ask the learner for the new instance directory name, for example `Study_Me`.
+2. Confirm the target path, for example `../Study_Me`.
+3. The target must not exist or must be empty, and must not be inside the template repo.
+   The script refuses otherwise.
 
-## Instantiation Steps
+## Cast The Instance
 
-Run these commands exactly:
-
-```bash
-# 1. Clone the template into the new learner directory
-git clone https://github.com/lennertvhoy/StudyState_Template.git ~/Study_Me
-
-# 2. Enter the new directory
-cd ~/Study_Me
-
-# 3. Remove the template Git history
-rm -rf .git
-
-# 4. Reinitialize Git
-git init
-
-# 5. Set the default branch
-git branch -M main
-
-# 6. Add the learner's remote if provided
-git remote add origin https://github.com/lennertvhoy/Study_Me.git
-
-# 7. Verify where you are before editing state
-pwd
-git rev-parse --show-toplevel
-git remote -v
-cat state/STUDYDD_MODE.yaml
-
-# 8. Switch from template to bootstrap mode
-```
-
-Edit `state/STUDYDD_MODE.yaml` to:
-
-```yaml
-mode: bootstrap
-template_origin: "https://github.com/lennertvhoy/StudyState_Template.git"
-personalized: false
-public_safe: false_or_review_required
-```
-
-Then continue:
+Run from the template checkout:
 
 ```bash
-# 9. Run bootstrap-safe validation
-python3 scripts/check_studydd.py
-
-# 10. Initialize the learner profile and first target
-#     (Use protocols/START_SESSION.md and PROMPTS/coding_agent_start_prompt.md
-#      inside the new instance, not in the template repo.)
-
-# 11. Switch from bootstrap to learner_instance mode
+python3 scripts/create_instance.py \
+  --target ../Study_Me \
+  --remote https://github.com/example/Study_Me.git
 ```
 
-Edit `state/STUDYDD_MODE.yaml` to:
+The script:
 
-```yaml
-mode: learner_instance
-template_origin: "https://github.com/lennertvhoy/StudyState_Template.git"
-personalized: true
-public_safe: false_or_review_required
-```
+1. copies the files an instance owns (`managed` and `seeded` in `core/ownership.json`) and
+   leaves the template's maintenance material behind (its README, changelog, project
+   definition, and update tools);
+2. writes the instance's own `README.md`, `PROJECT.md`, `STATE.yaml`,
+   `evidence/bootstrap-001/summary.md`, and `AGENTS.md` (the template's contract plus empty
+   `## Local rules` and `## Owner directives`);
+3. starts a fresh Git history on `main`, adds the remote, and keeps the learner's own git
+   identity when one is configured;
+4. switches `state/STUDYDD_MODE.yaml` to `mode: bootstrap`, keeping its comments;
+5. records the template version and commit in `state/STUDYDD_TEMPLATE_VERSION.yaml` and a
+   lock of the template files in `state/TEMPLATE_LOCK.json`, which `scripts/update_instance.py`
+   uses later;
+6. runs `python3 scripts/check_studydd.py` and prints the start prompt.
 
-Then continue:
+Nothing is committed or pushed. The instance's ProjectState gate
+(`python3 scripts/projectstate_gate.py`) fails until the outcome and the first journey are
+recorded. That is honest, not a fault.
 
-```bash
-# 12. Run full learner-instance validation
-python3 scripts/check_studydd.py
+## Initialize The Learner
 
-# 13. First commit
-git add .
-git commit -m "chore: initialize StudyState learner instance"
+Inside the new instance only:
 
-# 14. Push only if the learner explicitly requested it
-git push -u origin main
-```
+1. Open `PROMPTS/coding_agent_start_prompt.md` and follow it.
+2. Initialize the learner profile, first target, skill map, sources, and next action. Draft
+   the User and Outcome in `PROJECT.md` from the learner's words and ask them to confirm.
+3. Only after that, set `state/STUDYDD_MODE.yaml` to `mode: learner_instance` and run
+   `python3 scripts/check_studydd.py` again.
+4. Make the first commit, and push only if the learner explicitly asks:
 
-Replace `~/Study_Me` and the remote URL with the learner's actual paths.
+   ```bash
+   git add .
+   git commit -m "chore: initialize StudyState learner instance"
+   ```
 
 ## Bootstrap Mode
 
 `bootstrap` means:
 
-- The repo has left the template remote.
-- Git history has been reset.
-- Required template files, protocols, scripts, prompts, and mode marker are present.
-- Learner profile and first target are **not** initialized yet.
-- Validation passes with a warning that personalization is incomplete.
+- The repo has left the template remote and its Git history has been reset.
+- Required files, protocols, scripts, prompts, and the mode marker are present.
+- The learner profile and first target are **not** initialized yet.
+- Validation passes with a note that personalization is incomplete.
 
-Do not switch to `learner_instance` until the learner profile, first target, skill map, sources, and next action are initialized.
+Do not switch to `learner_instance` until the learner profile, first target, skill map,
+sources, and next action are initialized: the validator then expects the real learner state.
+
+## Manual Fallback
+
+Use this only when the script cannot run. A hand-made copy has no template lock, so
+`update_instance.py` cannot tell your edits from stale text later. Prefer the script.
+
+1. Clone the template into the new directory and enter it.
+2. From `core/instance/`, copy `README.md`, `PROJECT.md`, `STATE.yaml`, and
+   `evidence/bootstrap-001/summary.md` over their counterparts at the repository root.
+3. In `AGENTS.md`, keep everything up to and including the `studystate:managed:end` line,
+   then append `core/instance/AGENTS.local.md`.
+4. Delete every file that `core/ownership.json` classifies as `template_only` (the template's
+   changelog, maintenance notes, update tools, and their tests), including `core/` itself.
+5. `rm -rf .git`, then `git init -b main` and `git remote add origin <url>`.
+6. Set `mode: bootstrap` and add a `template_origin` line in `state/STUDYDD_MODE.yaml`, then run
+   `python3 scripts/check_studydd.py`.
 
 ## After Instantiation
 
-1. Confirm the new repo is now a learner instance.
+1. Confirm the new repo is a learner instance (`state/STUDYDD_MODE.yaml`).
 2. Initialize the learner profile and first target only inside the new instance.
 3. Never return to the template repo to make learner-specific edits.
 
-## Manual Instantiation Smoke Test
-
-If you want to verify the template can still be instantiated:
+## Smoke Test
 
 ```bash
 python3 scripts/test_instantiate_template.py
+python3 scripts/test_instance_journey.py
 ```
 
-The smoke test creates a temporary copy, reinitializes Git, runs bootstrap validation, simulates minimal learner initialization, switches to `learner_instance`, runs full validation, and cleans up.
-
-## What Not To Do
-
-- Do not edit the template repo during instantiation except to read it.
-- Do not leave the template `.git/` history in the new instance.
-- Do not initialize learner state before `.git/` is removed and Git is reinitialized.
-- Do not set the new instance remote to `StudyState_Template`.
-- Do not run learner-instance validation until learner profile and first target are initialized.
-- Do not switch directly from `template` to `learner_instance`; always use `bootstrap` first.
+The first creates a temporary instance, simulates minimal learner initialization, switches to
+`learner_instance`, and validates. The second runs the whole journey: cast, study, review,
+source check, update.

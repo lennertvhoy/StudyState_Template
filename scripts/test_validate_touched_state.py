@@ -201,6 +201,23 @@ def main() -> int:
         return 1
     assert "not found" in result.stdout
 
+    print("\nTest: evidence appended after compaction validates from the audit log")
+    evidence_log = target / "state" / "EVIDENCE_LOG.md"
+    evidence_log.write_text(
+        evidence_log.read_text(encoding="utf-8")
+        + "\n- **Date:** 2026-06-25\n- **Target ID:** tv-target\n- **Skill ID:** tv-search-basics\n"
+        "- **Evidence ID:** ev_tv_fresh\n- **Question ID:** Q-TV-002\n- **Verdict:** partial\n- **Confidence:** low\n",
+        encoding="utf-8",
+    )
+    result = run(
+        [sys.executable, "scripts/validate_touched_state.py", "--evidence-id", "ev_tv_fresh"],
+        target,
+        check=False,
+    )
+    print(result.stdout)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "not yet in the index" in result.stdout, "the fallback says the index is stale"
+
     print("\nTest: unknown evidence fails")
     result = run(
         [sys.executable, "scripts/validate_touched_state.py", "--evidence-id", "ev_missing"],

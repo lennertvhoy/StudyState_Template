@@ -1,5 +1,0 @@
-d40fdcf docs: add pushed-commit evidence for demo path
-89f7988 feat: add public StudyDD demo replay
-f6f168c feat: spaced-repetition-first tutoring policy
-d7004f5 docs: record actual pushed commit hash in evidence
-b341725 feat: harden StudyDD public template lifecycle
