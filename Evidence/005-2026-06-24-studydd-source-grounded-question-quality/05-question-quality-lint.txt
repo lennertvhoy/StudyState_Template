@@ -1,7 +1,0 @@
-Question lint
-
-Checked: 1 question file(s)
-
-Q-DEMO-001: pass
-
-Summary: 1 passed, 0 warned, 0 failed

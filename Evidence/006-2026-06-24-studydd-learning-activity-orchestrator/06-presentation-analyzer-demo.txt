@@ -1,8 +1,0 @@
-Word count: 55
-Estimated speaking time: 0.4 minutes
-Opening detected: yes
-Closing detected: yes
-Structure markers found: ['next', 'then', 'for example']
-Jargon warnings (heuristic): (none)
-Unsupported claim warnings (heuristic): (none)
-Suggested improvement: Estimated time (0.4 min) is much shorter than target (3 min). Add an example or detail.
